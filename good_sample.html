@@ -2,43 +2,42 @@
 <HTML>
 <HEAD>
 <TITLE>HTML::TextToHTML Sample Conversion</TITLE>
-<META NAME="generator" CONTENT="HTML::TextToHTML v0.02">
+<META NAME="generator" CONTENT="HTML::TextToHTML v0.03">
 </HEAD>
 <BODY>
-<P>
-<A HREF="http://www.katspace.com/tools/text_to_html/">HTML::TextToHTML</A> Sample Conversion
+<P><A HREF="http://www.katspace.com/tools/text_to_html/">HTML::TextToHTML</A> Sample Conversion
 
-<P>
-This sample is based hugely on the original sample.txt produced
+<P>This sample is based hugely on the original sample.txt produced
 by <A HREF="http://www.aigeek.com/">Seth Golub</A> for <A HREF="http://www.aigeek.com/txt2html/">txt2html</A>.
 
-<P>
-I used the following options to convert this document:
+<P>I used the following options to convert this document:
 
-<P>
--tf --mail --heading '^ *--[\w\s]+-- *$' --system_link_dict TextToHTML.dict
---append_body sample.foot --infile sample.txt --outfile sample.html
+<PRE>
+     -tf --mail --tables --heading '^ *--[\w\s]+-- *$'
+     --system_link_dict TextToHTML.dict
+     --append_body sample.foot --infile sample.txt --outfile sample.html
 
-<P>
-This has either been done at the command line with:
+</PRE>
+<P>This has either been done at the command line with:
 
-<P>
-        perl -MHTML::TextToHTML -e run_txt2html -- <EM>options</EM>
+<P>        perl -MHTML::TextToHTML -e run_txt2html -- <EM>options</EM>
 
-<P>
-or from a (test) perl script with:
+<P>or using the script
+
+<P>        texthyper <EM>options</EM>
+
+<P>or from a (test) perl script with:
         
 <PRE>
         use HTML::TextToHTML;
         my $conv = new HTML::TextToHTML();
         $conv-&gt;txt2html([<EM>options</EM>]);
-</PRE>
 
+</PRE>
 <HR>
 
 <!-- New Message -->
-<p>
-<A NAME="0">From</A> <A HREF="mailto:bozo@clown.wustl.edu">bozo@clown.wustl.edu</A><BR>
+<P><A NAME="0">From</A> <A HREF="mailto:bozo@clown.wustl.edu">bozo@clown.wustl.edu</A><BR>
 Return-Path: &lt;<A HREF="mailto:bozo@clown.wustl.edu">bozo@clown.wustl.edu</A>&gt;<BR>
 Message-Id: &lt;<A HREF="mailto:9405102200.AA04736@clown.wustl.edu">9405102200.AA04736@clown.wustl.edu</A>&gt;<BR>
 Content-Length: 1070<BR>
@@ -47,61 +46,47 @@ To: <A HREF="mailto:rubykat@katspace.com">rubykat@katspace.com</A> (<A HREF="htt
 Subject: Re: HTML::TextToHTML<BR>
 Date: Sun, 12 May 2002 10:01:10 -0500
 
-<P>
-Bozo wrote:<BR>
+<P>Bozo wrote:<BR>
 BtC&gt; Can you post an example text file with its html'ed output?<BR>
 BtC&gt; That would provide a much better first glance at what it does<BR>
 BtC&gt; without having to look through and see what the perl code does.
 
-<P>
-Good idea.  I'll write something up.
+<P>Good idea.  I'll write something up.
 
 <HR>
 
-<P>
-The header lines were kept separate because they looked like mail
+<P>The header lines were kept separate because they looked like mail
 headers and I have mailmode on.  The same thing applies to Bozo's
 quoted text.  Mailmode doesn't screw things up very often, but since
 most people are usually converting non-mail, it's off by default.
 
-<P>
-Paragraphs are handled ok.  In fact, this one is here just to
+<P>Paragraphs are handled ok.  In fact, this one is here just to
 demonstrate that.
 
-<P>
-<STRONG>THIS LINE IS VERY IMPORTANT!</STRONG><BR>
+<P><STRONG>THIS LINE IS VERY IMPORTANT!</STRONG><BR>
 (Ok, it wasn't <EM>that</EM> important)
-
 
 <H1><A NAME="section-1.">EXAMPLE HEADER</A></H1>
  
-<P>
-Since this is the first header noticed (all caps, underlined with an
+<P>Since this is the first header noticed (all caps, underlined with an
 "="), it will be a level 1 header.  It gets an anchor named
 "section-1".
 
 <H2><A NAME="section-1.1.">Another example</A></H2>
- <P>
-This is the second type of header (not all caps, underlined with "=").
+ <P>This is the second type of header (not all caps, underlined with "=").
 It gets an anchor named "section-1.1".
 
 <H2><A NAME="section-1.2.">Yet another example</A></H2>
  
-<P>
-This header was in the same style, so it was assigned the same header
+<P>This header was in the same style, so it was assigned the same header
 tag.  Note the anchor names in the HTML. (You probably can't see them
 in your current document view.)  Its anchor is named "section-1.2". 
 Get the picture?
 
-
-
 <H3><A NAME="section-1.2.1.">-- This is a custom header --</A></H3>
 
-<P>
-You can define your own custom header patterns if you know what your
+<P>You can define your own custom header patterns if you know what your
 documents look like.
-
-
 
 <H2><A NAME="section-1.3.">Features of HTML::TextToHTML</A></H2>
  
@@ -131,7 +116,7 @@ documents look like.
     </OL>
   </OL>
   <LI>Doesn't screw up mail-ish things
-  <LI>Spots preformated text sometimes
+  <LI>Spots preformated text
 
 </UL>
 <PRE>
@@ -139,8 +124,8 @@ documents look like.
         Surrounding blank lines aren't necessary.  If it sees enough
         whitespace in a line, it preformats it.  How much is enough?
         Set it yourself at command line if you want.
-</PRE>
 
+</PRE>
 <UL>
   <LI>You can append a file automatically to all converted files.  This
    is handy for adding signatures to your documents.
@@ -159,7 +144,10 @@ documents look like.
   <LI>Puts anchors at all headers and, if you're using the mail header
    features, at the beginning of each mail message.  The anchor names
    for headings are based on guessed section numbers.  
+  <UL>
+    <LI>You can turn off this option too, if you don't like it.
 
+  </UL>
   <LI>Groks Mosaic-style "formatted text" headers (like the one below)
 
   <LI>Can hyperlink things according to a dictionary file.
@@ -169,11 +157,13 @@ documents look like.
   <LI>One can also use the link-dictionary to define custom tags, for
    example using the star character to indicate <EM>italics</EM>.
 
+  <LI>Now with Tables!  No need for fancy delimiters, this figures out
+   tables by looking at the layout, the spacing of the cells.
+
 </UL>
 <H4><A NAME="section-1.3.1.1.">Example of short lines</A></H4>
  
-<P>
-We're the knights of the round table<BR>
+<P>We're the knights of the round table<BR>
 We dance whene'er we're able<BR>
 We do routines and chorus scenes<BR>
 With footwork impeccable.<BR>
@@ -182,23 +172,83 @@ We eat ham and jam and spam a lot.
 
 <H4><A NAME="section-1.3.1.2.">Example of varied formatting</A></H4>
  
-<P>
-If I want to <EM>emphasize</EM> something, then I'd use stars to wrap
+<P>If I want to <EM>emphasize</EM> something, then I'd use stars to wrap
 around the words, <EM>even if there were more than one</EM>, <EM>that's</EM>
 what I'd do.  But I could also <U>underline</U> words, so long as
 the darn thing was not a_variable_name, in which case I wouldn't
 want to lose the underscores in something which thought it was
 underlining.  Though we might want to <U>underline more than one word</U>
 in a sentence.  Especially if it is <U>The Title Of A Book</U>.
-For another kind of emphasis, let's go and <B>put something in bold</B>.
+For another kind of emphasis, let's go and <STRONG>put something in bold</STRONG>.
 
+<P>But it doesn't even need to be that simple. Something which is <EM>really
+exciting</EM> is coping with italics and similar things <EM>spread across
+multiple lines</EM>.
+
+<H4><A NAME="section-1.3.1.3.">Example of Long Preformatting</A></H4>
+ 
+<P>(extract from Let It Rain by Kristen Hall)
+
+<PRE>
+        I have given, I have given and got none
+        Still I'm driven by something I can't explain
+        It's not a cross, it is a choice
+        I cannot help but hear his voice
+        I only wish that I could listen without shame
+
+        Let it rain, let it rain, on me
+        Let it rain, oh let it rain,
+        Let it rain, on me
+
+        I have been a witness to the perfect crime
+        Wipe the grin off of my face to hide the pain
+        It isn't worth the tears you cry
+        To have a perfect alibi
+        Now I'm beaten at the hands of my own game
+
+        Let it rain, let it rain, on me
+        Let it rain, oh let it rain,
+        Let it rain, on me
+
+</PRE>
+<H4><A NAME="section-1.3.1.4.">Examples of Tables</A></H4>
+ 
+<P>Here is a simple table:
+
+<TABLE>
+<TR><TD>-e</TD><TD>File exists.
+</TD></TR><TR><TD>-z</TD><TD>File has zero size.
+</TD></TR><TR><TD>-s</TD><TD>File has nonzero size (returns size).
+</TD></TR>
+</TABLE>
+<P>Here are some of the conditions of tables:
+
+<TABLE>
+<TR><TD ALIGN="RIGHT"><STRONG>Context:</STRONG></TD><TD>A table needs to be surrounded by blank lines.
+</TD></TR><TR><TD ALIGN="RIGHT"><STRONG>Length:</STRONG></TD><TD>A table must contain at least two rows.
+</TD></TR><TR><TD ALIGN="RIGHT"><STRONG>Width:</STRONG></TD><TD>A table must contain at least two columns.
+</TD></TR><TR><TD ALIGN="RIGHT"><STRONG>Spacing:</STRONG></TD><TD>There needs to be at least two spaces between the columns,
+</TD></TR><TR><TD ALIGN="RIGHT"></TD><TD>otherwise there might be some random paragraph which
+</TD></TR><TR><TD ALIGN="RIGHT"></TD><TD>could have inter-word spacing that lined up by accident.
+</TD></TR><TR><TD ALIGN="RIGHT"><STRONG>Cell Size:</STRONG></TD><TD>If you have more than one line (as just above) then
+</TD></TR><TR><TD ALIGN="RIGHT"></TD><TD>you will simply get empty cells where the other column is empty.
+</TD></TR><TR><TD ALIGN="RIGHT"><STRONG>Tabs:</STRONG></TD><TD>Beware of tabs, because they are all converted to spaces
+</TD></TR><TR><TD ALIGN="RIGHT"></TD><TD>first, and your table may no longer line up.
+</TD></TR><TR><TD ALIGN="RIGHT"><STRONG>Alignment:</STRONG></TD><TD>Alignment of cells is attempted to be preserved.
+</TD></TR>
+</TABLE>
+<P>Here's a three-column table:
+
+<TABLE>
+<TR><TD>Fred</TD><TD>Armstrong</TD><TD>52
+</TD></TR><TR><TD>George</TD><TD>Ningie</TD><TD>64
+</TD></TR><TR><TD>Sam</TD><TD>Jones</TD><TD>47
+</TD></TR>
+</TABLE>
 <H1><A NAME="section-2.">THINGS TO DO</A></H1>
  
-<P>
-There are some things which this module doesn't handle yet which
-I would like to implement. Something which would be *really
-exciting* would be coping with italics and similar things *spread
-across multiple lines*.
+<P>There are some things which this module doesn't handle yet which
+I would like to implement.
 
 <OL>
   <LI>I would like to be able to preserve lettered lists, that is:
@@ -212,34 +262,20 @@ across multiple lines*.
   I am not sure if I would like it to be optional.
 
 </OL>
-<P>
-I would also like to implement tables, like the following:
+<P>Perhaps it would be nice to have tables with borders,
+though I'm not sure how exactly to define them.
 
-<P>
-Written For: The First Sentinel Lyric Wheel
-Disclaimer:  The characters and concepts of The Sentinel are owned by Pet Fly
-<PRE>
-             Productions.  I'm just borrowing them for a while.
-Rating:      PG (language)
-Summary:     After the fire, guilt and nightmare.  Hurt, angst, a little
-             comfort.
-</PRE>
+<P>Definition lists would also be cool.
 
-<P>
-Definition lists would also be cool.
-
-<P>
-Fanfic:<BR>
+<P>Fanfic:<BR>
   Fiction based on the universe of some movie or TV show.
 Fanzine:<BR>
   Amateur magazine produced by fans.
 
 <HR>
 
-<P>
-The footer is everything from the end of this sentence to the
+<P>The footer is everything from the end of this sentence to the
 &lt;/BODY&gt; tag.
-
 
 <HR>
 <ADDRESS>

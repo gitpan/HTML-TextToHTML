@@ -1,6 +1,28 @@
 Revision history for Perl module HTML::TextToHTML.
 ==================================================
 
+0.03  Sun 26th May 2002
+	- documented the format of the Link Dictionary
+	- added the do_help method, and changed the behaviour of --help
+and --manpage
+	- added the --make_anchors option, which enables one to disable
+the making of anchors, so that if one prefers another method of
+anchor-making (such as that in HTML::GenToc) then one can use that
+instead.
+	- altered the #bold# pattern in the link dictionary to only need one
+hash.  This should still hopefully allow things like #1 without turning it
+bold, and being able to use ### as a separator.
+	- gratuitous self-promotion: added HTML::GenToc to the
+sample links dictionary
+	- removed the need for getline(), but rather pass the lines in to
+the methods, in order to parse by-paragraph and then by-line (mucho rewrite)
+which enabled me to:
+	  * implement the table-parsing from Gareth Rees's HTML::FromText
+module -- added the --make_tables option
+	  * now the links dictionary does multiline matches (useful for
+things like italics which break over lines)
+	  * enable converting passed-in strings rather than just files
+
 0.02  Wed 15th May 2002
 	- fixed bug with link dictionary parsing
 	- improved the tests

@@ -5,14 +5,11 @@
 
 # change 'tests => 1' to 'tests => last_test_to_print';
 
-use Test::Simple tests => 5;
+use Test::More tests => 7;
 use HTML::TextToHTML;
 ok(1); # If we made it this far, we're ok.
 
 #########################
-
-# Insert your test code below, the Test module is use()ed here so read
-# its man page ( perldoc Test ) for help writing this test script.
 
 # compare two files
 sub compare {
@@ -70,6 +67,9 @@ sub compare {
     return $res;
 }
 
+# Insert your test code below, the Test module is use()ed here so read
+# its man page ( perldoc Test ) for help writing this test script.
+
 my $conv = new HTML::TextToHTML();
 ok( defined $conv, 'new() returned something' );
 ok( $conv->isa('HTML::TextToHTML'), "  and it's the right class" );
@@ -82,6 +82,7 @@ push @args, "--outfile", "sample.html";
 push @args, "--append_file", "sample.foot";
 push @args, "-tf", "--mail";
 push @args, "-H", '^ *--[\w\s]+-- *$';
+push @args, "--make_tables";
 #push @args, "--debug";
 #push @args, "--dict_debug", "7";
 $result = $conv->txt2html(\@args);
@@ -90,3 +91,26 @@ ok($result, 'converted sample.txt');
 # compare the files
 $result = compare('good_sample.html', 'sample.html');
 ok($result, 'test file matches original example exactly');
+
+# test the process_para method alone
+$test_str = "Matty had a little truck
+he drove it round and round
+and everywhere that Matty went
+the truck was *always* found.
+";
+
+$ok_str = "<P>Matty had a little truck<BR>
+he drove it round and round<BR>
+and everywhere that Matty went<BR>
+the truck was <EM>always</EM> found.
+";
+@args = ();
+push @args, "--file", "CLEAR";
+push @args, "--outfile", "-";
+push @args, "--append_file", "";
+
+$out_str = $conv->process_para($test_str);
+ok($out_str, 'converted sample string');
+
+# compare the result
+is($out_str, $ok_str, 'compare converted string with OK string');

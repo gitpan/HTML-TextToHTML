@@ -1,11 +1,13 @@
 #
-# Sample links dictionary file for Seth Golub's txt2html
+# Sample links dictionary file for HTML::TextToHTML
+# http://www.katspace.com/tools/text_to_html
+# based on links dictionary for Seth Golub's txt2html
 # http://www.aigeek.com/txt2html/
 #
 # This dictionary contains some patterns for converting obvious URLs,
 # ftp sites, hostnames, email addresses and the like to hrefs.
 #
-# Adapted shamelessly from the html.pl package by Oscar Nierstrasz in
+# Original adapted from the html.pl package by Oscar Nierstrasz in
 # the Software Archive of the Software Composition Group
 # http://iamwww.unibe.ch/~scg/Src/
 #
@@ -135,22 +137,26 @@
 /([ \t\n])_([a-z][a-z0-9 -]*[a-z])_([\.;:,\!\?])/ -hi-> $1<U>$2</U>$3
 
 # Mark *emphasized stuff* as <EM>emphasized stuff</EM>
-/\B\*([a-z][a-z -]*[a-z])\*\B/ -hi-> <EM>$1</EM>
+#/\B\*([a-z][a-z -]*[a-z])\*\B/ -hi-> <EM>$1</EM>
 
 # Use this one instead if you want it to match more aggressively.
-/\B\*(\w(\w|\s|\!|\?|,|;|:|\'|\.)*(\w|\.|\!|\?))\*\B/ -hi-> <EM>$1</EM>
+/\B\*(\w(\w|\s|\!|\?|,|;|:|-|_|\'|\"|\.)*(\w|\"|\'|\.|,|:|\!|\?))\*\B/ -hi-> <EM>$1</EM>
+
+/\B\*((\w|\s|\!|\?|,|;|:|-|_|<u>|<\/u>|\'|\"|\.)*(\w|\"|\'|\.|\!|\?))\*\B/ -hi-> <EM>$1</EM>
 
 # We also need a special case for *x*
 /\B\*([a-z])\*\B/ -hi-> <EM>$1</EM>
 
-# Mark ##bolded stuff## as <B>bolded stuff</B>
-/\B##([a-z][a-z -]*[a-z])##\B/ -hi-> <B>$1</B>
+# Mark #bolded stuff# as <STRONG>bolded stuff</STRONG>
+/\B#([a-z][a-z -]*[a-z])#\B/ -hi-> <STRONG>$1</STRONG>
 
 # Use this one instead if you want it to match more aggressively.
-/\B##(\w(\w|\s|\!|\?|,|;|:|\'|\.)*(\w|\.|\!|\?))##\B/ -hi-> <B>$1</B>
+# note that this doesn't use \w because we don't want to match numbers
+# since #1 is a common enough usage.
+/\B#([a-z-_]([a-z-_]|\s|\!|\?|,|;|:|\'|\.)*([a-z-_]|\.|\'|\"|:|\!|\?))#\B/ -hi-> <STRONG>$1</STRONG>
 
-# We also need a special case for ##x##
-/\B##([a-z])##\B/ -hi-> <B>$1</B>
+# We also need a special case for #x#
+/\B#([a-z])#\B/ -hi-> <STRONG>$1</STRONG>
 
 
 # Seth and his amazing conversion program    :-)
@@ -158,9 +164,11 @@
 "Seth Golub"  -io-> http://www.aigeek.com/
 "txt2html"    -io-> http://www.aigeek.com/txt2html/
 
-# Kathryn and her amazing conversion module 8-)
+# Kathryn and her amazing modules 8-)
 "Kathryn Andersen"  -io-> http://www.katspace.com/
 "HTML::TextToHTML"  -io-> http://www.katspace.com/tools/text_to_html/
+"hypertoc"          -io-> http://www.katspace.com/tools/hypertoc/
+"HTML::GenToc"      -io-> http://www.katspace.com/tools/hypertoc/
 
 # End of sample dictionary
 
