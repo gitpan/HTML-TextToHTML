@@ -1,0 +1,249 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 3.2 Final//EN">
+<HTML>
+<HEAD>
+<TITLE>HTML::TextToHTML Sample Conversion</TITLE>
+<META NAME="generator" CONTENT="HTML::TextToHTML v0.02">
+</HEAD>
+<BODY>
+<P>
+<A HREF="http://www.katspace.com/tools/text_to_html/">HTML::TextToHTML</A> Sample Conversion
+
+<P>
+This sample is based hugely on the original sample.txt produced
+by <A HREF="http://www.aigeek.com/">Seth Golub</A> for <A HREF="http://www.aigeek.com/txt2html/">txt2html</A>.
+
+<P>
+I used the following options to convert this document:
+
+<P>
+-tf --mail --heading '^ *--[\w\s]+-- *$' --system_link_dict TextToHTML.dict
+--append_body sample.foot --infile sample.txt --outfile sample.html
+
+<P>
+This has either been done at the command line with:
+
+<P>
+        perl -MHTML::TextToHTML -e run_txt2html -- <EM>options</EM>
+
+<P>
+or from a (test) perl script with:
+        
+<PRE>
+        use HTML::TextToHTML;
+        my $conv = new HTML::TextToHTML();
+        $conv-&gt;txt2html([<EM>options</EM>]);
+</PRE>
+
+<HR>
+
+<!-- New Message -->
+<p>
+<A NAME="0">From</A> <A HREF="mailto:bozo@clown.wustl.edu">bozo@clown.wustl.edu</A><BR>
+Return-Path: &lt;<A HREF="mailto:bozo@clown.wustl.edu">bozo@clown.wustl.edu</A>&gt;<BR>
+Message-Id: &lt;<A HREF="mailto:9405102200.AA04736@clown.wustl.edu">9405102200.AA04736@clown.wustl.edu</A>&gt;<BR>
+Content-Length: 1070<BR>
+From: <A HREF="mailto:bozo@clown.wustl.edu">bozo@clown.wustl.edu</A> (Bozo the Clown)<BR>
+To: <A HREF="mailto:rubykat@katspace.com">rubykat@katspace.com</A> (<A HREF="http://www.katspace.com/">Kathryn Andersen</A>)<BR>
+Subject: Re: HTML::TextToHTML<BR>
+Date: Sun, 12 May 2002 10:01:10 -0500
+
+<P>
+Bozo wrote:<BR>
+BtC&gt; Can you post an example text file with its html'ed output?<BR>
+BtC&gt; That would provide a much better first glance at what it does<BR>
+BtC&gt; without having to look through and see what the perl code does.
+
+<P>
+Good idea.  I'll write something up.
+
+<HR>
+
+<P>
+The header lines were kept separate because they looked like mail
+headers and I have mailmode on.  The same thing applies to Bozo's
+quoted text.  Mailmode doesn't screw things up very often, but since
+most people are usually converting non-mail, it's off by default.
+
+<P>
+Paragraphs are handled ok.  In fact, this one is here just to
+demonstrate that.
+
+<P>
+<STRONG>THIS LINE IS VERY IMPORTANT!</STRONG><BR>
+(Ok, it wasn't <EM>that</EM> important)
+
+
+<H1><A NAME="section-1.">EXAMPLE HEADER</A></H1>
+ 
+<P>
+Since this is the first header noticed (all caps, underlined with an
+"="), it will be a level 1 header.  It gets an anchor named
+"section-1".
+
+<H2><A NAME="section-1.1.">Another example</A></H2>
+ <P>
+This is the second type of header (not all caps, underlined with "=").
+It gets an anchor named "section-1.1".
+
+<H2><A NAME="section-1.2.">Yet another example</A></H2>
+ 
+<P>
+This header was in the same style, so it was assigned the same header
+tag.  Note the anchor names in the HTML. (You probably can't see them
+in your current document view.)  Its anchor is named "section-1.2". 
+Get the picture?
+
+
+
+<H3><A NAME="section-1.2.1.">-- This is a custom header --</A></H3>
+
+<P>
+You can define your own custom header patterns if you know what your
+documents look like.
+
+
+
+<H2><A NAME="section-1.3.">Features of HTML::TextToHTML</A></H2>
+ 
+<UL>
+  <LI>Handles different kinds of lists
+  <OL>
+    <LI>Bulleted
+    <LI>Numbered
+    <UL>
+      <LI>You can nest them as far as you want.
+      <LI>It's pretty decent about figuring out which level of list it
+        is supposed to be on.
+      <UL>
+        <LI>You don't need to change bullet markers to start a new list.
+      </UL>
+    </UL>
+    <LI>Lettered
+    <OL>
+      <LI>Finally handles lettered lists
+      <LI>Upper and lower case both work
+      <OL>
+        <LI>Here's an example
+        <LI>I've been meaning to add this for some time.
+      </OL>
+      <LI>HTML without CSS can't specify how ordered lists should be
+         indicated, so it will be a numbered list in most browsers.
+    </OL>
+  </OL>
+  <LI>Doesn't screw up mail-ish things
+  <LI>Spots preformated text sometimes
+
+</UL>
+<PRE>
+                 It just needs to have enough whitespace in the line.
+        Surrounding blank lines aren't necessary.  If it sees enough
+        whitespace in a line, it preformats it.  How much is enough?
+        Set it yourself at command line if you want.
+</PRE>
+
+<UL>
+  <LI>You can append a file automatically to all converted files.  This
+   is handy for adding signatures to your documents.
+
+  <LI>Deals with paragraphs decently.
+
+  <UL>
+    <LI>looks for short lines in the middle of paragraphs and keeps them
+     short with the use of breaks (&lt;BR&gt;).  How short the lines need to
+     be is configurable.
+    <LI>Unhyphenates split words that are in the middle of paragraphs.  
+     Let me know if trailing punctuation isn't handled "properly".  
+     It should be.
+
+  </UL>
+  <LI>Puts anchors at all headers and, if you're using the mail header
+   features, at the beginning of each mail message.  The anchor names
+   for headings are based on guessed section numbers.  
+
+  <LI>Groks Mosaic-style "formatted text" headers (like the one below)
+
+  <LI>Can hyperlink things according to a dictionary file.
+   The sample dictionary handles URLs like
+   <A HREF="http://www.aigeek.com/">http://www.aigeek.com/</A> and also shows how to do simpler
+   things such as linking the word txt2html the first time it appeared.
+  <LI>One can also use the link-dictionary to define custom tags, for
+   example using the star character to indicate <EM>italics</EM>.
+
+</UL>
+<H4><A NAME="section-1.3.1.1.">Example of short lines</A></H4>
+ 
+<P>
+We're the knights of the round table<BR>
+We dance whene'er we're able<BR>
+We do routines and chorus scenes<BR>
+With footwork impeccable.<BR>
+We dine well here in Camelot<BR>
+We eat ham and jam and spam a lot.
+
+<H4><A NAME="section-1.3.1.2.">Example of varied formatting</A></H4>
+ 
+<P>
+If I want to <EM>emphasize</EM> something, then I'd use stars to wrap
+around the words, <EM>even if there were more than one</EM>, <EM>that's</EM>
+what I'd do.  But I could also <U>underline</U> words, so long as
+the darn thing was not a_variable_name, in which case I wouldn't
+want to lose the underscores in something which thought it was
+underlining.  Though we might want to <U>underline more than one word</U>
+in a sentence.  Especially if it is <U>The Title Of A Book</U>.
+For another kind of emphasis, let's go and <B>put something in bold</B>.
+
+<H1><A NAME="section-2.">THINGS TO DO</A></H1>
+ 
+<P>
+There are some things which this module doesn't handle yet which
+I would like to implement. Something which would be *really
+exciting* would be coping with italics and similar things *spread
+across multiple lines*.
+
+<OL>
+  <LI>I would like to be able to preserve lettered lists, that is:
+  <OL>
+    <LI>recognise that they are letters and not numbers (which it already
+      does)
+    <LI>display the correct OL properties with CSS so as to preserve
+      that information.
+  </OL>
+  <LI>Related to the above, I would like to use correct XHTML, not 3.2 HTML.
+  I am not sure if I would like it to be optional.
+
+</OL>
+<P>
+I would also like to implement tables, like the following:
+
+<P>
+Written For: The First Sentinel Lyric Wheel
+Disclaimer:  The characters and concepts of The Sentinel are owned by Pet Fly
+<PRE>
+             Productions.  I'm just borrowing them for a while.
+Rating:      PG (language)
+Summary:     After the fire, guilt and nightmare.  Hurt, angst, a little
+             comfort.
+</PRE>
+
+<P>
+Definition lists would also be cool.
+
+<P>
+Fanfic:<BR>
+  Fiction based on the universe of some movie or TV show.
+Fanzine:<BR>
+  Amateur magazine produced by fans.
+
+<HR>
+
+<P>
+The footer is everything from the end of this sentence to the
+&lt;/BODY&gt; tag.
+
+
+<HR>
+<ADDRESS>
+<A href="http://www.katspace.com/">rubykat@katspace.com</A>
+</ADDRESS>
+</BODY>
+</HTML>

@@ -7,4 +7,5 @@ test.pl
 TextToHTML.pm
 sample.txt
 sample.foot
-txt2html.dict
+good_sample.html
+TextToHTML.dict

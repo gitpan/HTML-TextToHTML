@@ -7,7 +7,8 @@ WriteMakefile(
     'PREREQ_PM'		=> {
     		'AppConfig' => 1.52,
 		'Pod::Usage' => 0,
-		'Data::Dumper' => 0
+		'Data::Dumper' => 0,
+		'Test::Simple' => 0
     	},
     ($] >= 5.005 ?    ## Add these new keywords supported since 5.005
       (ABSTRACT_FROM => 'TextToHTML.pm', # retrieve abstract from module

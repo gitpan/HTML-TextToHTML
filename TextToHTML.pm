@@ -563,7 +563,7 @@ BEGIN {
   run_txt2html
 );
 $PROG = 'HTML::TextToHTML';
-$VERSION = '0.01';
+$VERSION = '0.02';
 
 #------------------------------------------------------------------------
 use constant TEXT_TO_HTML => "TEXT_TO_HTML";
@@ -576,7 +576,7 @@ use constant TEXT_TO_HTML => "TEXT_TO_HTML";
 # of what modes I'm in and what actions I've taken on the current and
 # previous lines.  
 use vars qw($NONE $LIST $HRULE $PAR $PRE $END $BREAK $HEADER
-  $MAILHEADER $MAILQUOTE $CAPS $LINK $PRE_EXPLICIT);
+  $MAILHEADER $MAILQUOTE $CAPS $LINK $PRE_EXPLICIT $TABLE);
 
 $NONE         = 0;
 $LIST         = 1;
@@ -591,6 +591,7 @@ $MAILQUOTE    = 256;
 $CAPS         = 512;
 $LINK         = 1024;
 $PRE_EXPLICIT = 2048;
+$TABLE        = 4096;
 
 # Constants for Ordered Lists and Unordered Lists.  
 # I use this in the list stack to keep track of what's what.
@@ -1186,7 +1187,8 @@ sub mailstuff ($) {
     elsif (($self->{__line} =~ /^(From:?)|(Newsgroups:) /)
         && is_blank($self->{__prev}))
     {
-        $self->anchor_mail() if !($self->{__prev_action} & $MAILHEADER);
+        $self->anchor_mail(\$self->{__line})
+	    if !($self->{__prev_action} & $MAILHEADER);
         chomp $self->{__line};
         $self->{__line} =
           "<!-- New Message -->\n<p>\n" . $self->{__line} . "<BR>\n";
@@ -1244,8 +1246,9 @@ sub count_indent ($$) {
     return length($ws);
 }
 
-sub listprefix {
-    my ($line) = @_;
+sub listprefix ($) {
+    my $line = shift;
+
     my ($prefix, $number, $rawprefix);
 
     return (0, 0, 0)
@@ -1274,9 +1277,12 @@ sub listprefix {
     ($prefix, $number, $rawprefix);
 }
 
-sub startlist ($$$$) {
+sub startlist ($$$$$) {
     my $self = shift;
-    my ($prefix, $number, $rawprefix) = @_;
+    my $prefix = shift;
+    my $number = shift;
+    my $rawprefix = shift;
+    my $prev_ref = shift;
 
     $self->{__listprefix}->[$self->{__listnum}] = $prefix;
     if ($number) {
@@ -1285,11 +1291,11 @@ sub startlist ($$$$) {
         if (($number ne "1") && ($number ne "a") && ($number ne "A")) {
             return 0;
         }
-        $self->{__prev} .= $self->{__list_indent} . "<OL>\n";
+        ${$prev_ref} .= $self->{__list_indent} . "<OL>\n";
         $self->{__list}->[$self->{__listnum}] = $OL;
     }
     else {
-        $self->{__prev} .= $self->{__list_indent} . "<UL>\n";
+        ${$prev_ref} .= $self->{__list_indent} . "<UL>\n";
         $self->{__list}->[$self->{__listnum}] = $UL;
     }
 
@@ -1301,18 +1307,19 @@ sub startlist ($$$$) {
 }
 
 # End N lists
-sub endlist ($$) {
+sub endlist ($$$) {
     my $self = shift;
+    my $n = shift;
+    my $prev_ref = shift;
 
-    my ($n) = @_;
     for (; $n > 0 ; $n--, $self->{__listnum}--) {
         $self->{__list_indent} =
           " " x ($self->{__listnum} - 1) x $self->indent_width();
         if ($self->{__list}->[$self->{__listnum} - 1] == $UL) {
-            $self->{__prev} .= $self->{__list_indent} . "</UL>\n";
+            ${$prev_ref} .= $self->{__list_indent} . "</UL>\n";
         }
         elsif ($self->{__list}->[$self->{__listnum} - 1] == $OL) {
-            $self->{__prev} .= $self->{__list_indent} . "</OL>\n";
+            ${$prev_ref} .= $self->{__list_indent} . "</OL>\n";
         }
         else {
             print STDERR "Encountered list of unknown type\n";
@@ -1322,27 +1329,34 @@ sub endlist ($$) {
     $self->{__mode} ^= $LIST if (!$self->{__listnum});
 }
 
-sub continuelist ($) {
+sub continuelist ($$$) {
     my $self = shift;
+    my $line_ref = shift;
+    my $line_action_ref = shift;
 
-    $self->{__line} =~ s/^\s*[-=o\*\267]+\s*/$self->{__list_indent}<LI>/
+    my $list_indent = $self->{__list_indent};
+    ${$line_ref} =~ s/^\s*[-=o\*\267]+\s*/$list_indent<LI>/
       if $self->{__list}->[$self->{__listnum} - 1] == $UL;
-    $self->{__line} =~ s/^\s*(\d+|[^\W\d_]).\s*/$self->{__list_indent}<LI>/
+    ${$line_ref} =~ s/^\s*(\d+|[^\W\d_]).\s*/$list_indent<LI>/
       if $self->{__list}->[$self->{__listnum} - 1] == $OL;
-    $self->{__line_action} |= $LIST;
+    ${$line_action_ref} |= $LIST;
 }
 
 sub liststuff ($) {
     my $self = shift;
+    my $line_ref = \$self->{__line};
+    my $line_action_ref = \$self->{__line_action};
+    my $prev_ref = \$self->{__prev};
+    my $prev_action_ref = \$self->{__prev_action};
 
     my $i;
 
-    my ($prefix, $number, $rawprefix) = listprefix($self->{__line});
+    my ($prefix, $number, $rawprefix) = listprefix(${$line_ref});
 
     if (!$prefix) {
-        return if !is_blank($self->{__prev});    # inside a list item
+        return if !is_blank(${$prev_ref});    # inside a list item
              # This ain't no list.  We'll want to end all of them.
-        $self->endlist($self->{__listnum}) if $self->{__listnum};
+        $self->endlist($self->{__listnum}, $prev_ref) if $self->{__listnum};
         return;
     }
 
@@ -1370,22 +1384,22 @@ sub liststuff ($) {
     # prefix starts.  This won't screw anything up, and if we don't do
     # it, the next line might appear to be indented relative to this
     # line, and get tagged as a new paragraph.
-    my ($total_prefix) = $self->{__line} =~ /^(\s*[\w=o\*-]+.\s*)/;
+    my ($total_prefix) = ${$line_ref} =~ /^(\s*[\w=o\*-]+.\s*)/;
 
     # Of course, we only use it if it really turns out to be a list.
 
     $islist = 1;
     $i++;
     if (($i > 0) && ($i != $self->{__listnum})) {
-        $self->endlist($self->{__listnum} - $i);
+        $self->endlist($self->{__listnum} - $i, $prev_ref);
         $islist = 0;
     }
     elsif (!$self->{__listnum} || ($i != $self->{__listnum})) {
         if (($self->{__line_indent} > 0)
-            || is_blank($self->{__prev})
-            || ($self->{__prev_action} & ($BREAK | $HEADER | $CAPS)))
+            || is_blank(${$prev_ref})
+            || (${$prev_action_ref} & ($BREAK | $HEADER | $CAPS)))
         {
-            $islist = $self->startlist($prefix, $number, $rawprefix);
+            $islist = $self->startlist($prefix, $number, $rawprefix, $prev_ref);
         }
         else {
 
@@ -1395,7 +1409,7 @@ sub liststuff ($) {
         }
     }
 
-    $self->continuelist($prefix, $number, $rawprefix)
+    $self->continuelist($line_ref, $line_action_ref)
       if ($self->{__mode} & $LIST);
     $self->{__line_indent} = length($total_prefix) if $islist;
 }
@@ -1459,8 +1473,8 @@ sub preformat ($) {
 
 sub make_new_anchor ($$) {
     my $self = shift;
+    my $heading_level = shift;
 
-    my ($heading_level) = @_;
     my ($anchor, $i);
 
     return sprintf("%d", $self->{__non_header_anchor}++) if (!$heading_level);
@@ -1482,19 +1496,21 @@ sub make_new_anchor ($$) {
     $anchor;
 }
 
-sub anchor_mail {
+sub anchor_mail ($$) {
     my $self = shift;
+    my $line_ref = shift;
 
     my ($anchor) = $self->make_new_anchor(0);
-    $self->{__line} =~ s/([^ ]*)/<A NAME="$anchor">$1<\/A>/;
+    ${$line_ref} =~ s/([^ ]*)/<A NAME="$anchor">$1<\/A>/;
 }
 
-sub anchor_heading ($$) {
+sub anchor_heading ($$$) {
     my $self = shift;
+    my $level = shift;
+    my $line_ref = shift;
 
-    my ($level)  = @_;
     my ($anchor) = $self->make_new_anchor($level);
-    $self->{__line} =~ s/(<H.>)(.*)(<\/H.>)/$1<A NAME="$anchor">$2<\/A>$3/;
+    ${$line_ref} =~ s/(<H.>)(.*)(<\/H.>)/$1<A NAME="$anchor">$2<\/A>$3/;
 }
 
 sub heading_level ($$) {
@@ -1506,14 +1522,17 @@ sub heading_level ($$) {
     $self->{__heading_styles}->{$style};
 }
 
-sub heading ($) {
+sub heading ($$$$) {
     my $self = shift;
+    my $line_ref = shift;
+    my $line_action_ref = shift;
+    my $next_ref = shift;
 
-    my ($hoffset, $heading) = $self->{__line} =~ /^(\s*)(.+)$/;
+    my ($hoffset, $heading) = ${$line_ref} =~ /^(\s*)(.+)$/;
     $hoffset = "" unless defined($hoffset);
     $heading = "" unless defined($heading);
     $heading =~ s/&[^;]+;/X/g;    # Unescape chars so we get an accurate length
-    my ($uoffset, $underline) = $self->{__nextline} =~ /^(\s*)(\S+)\s*$/;
+    my ($uoffset, $underline) = ${$next_ref} =~ /^(\s*)(\S+)\s*$/;
     $uoffset   = "" unless defined($uoffset);
     $underline = "" unless defined($underline);
     my ($lendiff, $offsetdiff);
@@ -1523,7 +1542,7 @@ sub heading ($) {
     $offsetdiff = length($hoffset) - length($uoffset);
     $offsetdiff *= -1 if $offsetdiff < 0;
 
-    if (is_blank($self->{__line})
+    if (is_blank(${$line_ref})
         || ($lendiff > $self->underline_length_tolerance())
         || ($offsetdiff > $self->underline_offset_tolerance()))
     {
@@ -1533,30 +1552,32 @@ sub heading ($) {
     $underline = substr($underline, 0, 1);
 
     # Call it a different style if the heading is in all caps.
-    $underline .= "C" if $self->iscaps($self->{__line});
-    $self->{__nextline} = $self->getline();    # Eat the underline
+    $underline .= "C" if $self->iscaps(${$line_ref});
+    ${$next_ref} = " ";    # Eat the underline
     $self->{__heading_level} = $self->heading_level($underline);
-    $self->tagline("H" . $self->{__heading_level});
-    $self->anchor_heading($self->{__heading_level});
-    $self->{__line_action} |= $HEADER;
+    $self->tagline("H" . $self->{__heading_level}, $line_ref);
+    $self->anchor_heading($self->{__heading_level}, $line_ref);
+    ${$line_action_ref} |= $HEADER;
 }
 
-sub custom_heading ($) {
+sub custom_heading ($$$) {
     my $self = shift;
+    my $line_ref = shift;
+    my $line_action_ref = shift;
 
     my ($i, $level);
     for ($i = 0 ; $i < @{$self->custom_heading_regexp()} ; $i++) {
         my $reg = ${$self->custom_heading_regexp()}[$i];
-        if ($self->{__line} =~ /$reg/) {
+        if (${$line_ref} =~ /$reg/) {
             if ($self->explicit_headings()) {
                 $level = $i + 1;
             }
             else {
                 $level = $self->heading_level("Cust" . $i);
             }
-            $self->tagline("H" . $level);
-            $self->anchor_heading($level);
-            $self->{__line_action} |= $HEADER;
+            $self->tagline("H" . $level, $line_ref);
+            $self->anchor_heading($level, $line_ref);
+            ${$line_action_ref} |= $HEADER;
             last;
         }
     }
@@ -1584,8 +1605,8 @@ sub unhyphenate ($) {
 
 sub untabify ($$) {
     my $self = shift;
+    my $line = shift;
 
-    my ($line) = @_;
     while ($line =~ /\011/) {
         $line =~ s/\011/" " x ($self->tab_width() - (length($`) %
 	    $self->tab_width()))/e;
@@ -1593,18 +1614,19 @@ sub untabify ($$) {
     $line;
 }
 
-sub tagline {
+sub tagline ($$$) {
     my $self = shift;
+    my $tag = shift;
+    my $line_ref = shift;
 
-    my ($tag) = @_;
-    chomp $self->{__line};    # Drop newline
-    $self->{__line} =~ s/^\s*(.*)$/<$tag>$1<\/$tag>\n/;
+    chomp ${$line_ref};    # Drop newline
+    ${$line_ref} =~ s/^\s*(.*)$/<$tag>$1<\/$tag>\n/;
 }
 
 sub iscaps {
     my $self = shift;
-
     local ($_) = @_;
+
     my $min_caps_len = $self->min_caps_length();
 
     # This is ugly, but I don't know a better way to do it.
@@ -1616,10 +1638,12 @@ sub iscaps {
 
 sub caps {
     my $self = shift;
+    my $line_ref = shift;
+    my $line_action_ref = shift;
 
-    if ($self->iscaps($self->{__line})) {
-        $self->tagline($self->caps_tag());
-        $self->{__line_action} |= $CAPS;
+    if ($self->iscaps(${$line_ref})) {
+        $self->tagline($self->caps_tag(), $line_ref);
+        ${$line_action_ref} |= $CAPS;
     }
 }
 
@@ -1758,7 +1782,13 @@ sub parse_dict ($$$) {
         }
     }
 
-    # now precomile the regexes
+}
+
+sub setup_dict_checking ($) {
+    my $self = shift;
+
+    # now create the replace funcs and precomile the regexes
+    my ($key, $URL, $switches, $options);
     my ($pattern, $href, $i, $r_sw, $code, $code_ref);
     for ($i = 1 ; $i < @{$self->{__links_table_order}} ; $i++) {
         $pattern  = $self->{__links_table_order}->[$i];
@@ -1824,14 +1854,16 @@ sub in_link_context ($$) {
 
 # Check (and alter if need be) the bits in this line matching
 # the patterns in the link dictionary.
-sub check_dictionary_links ($) {
+sub check_dictionary_links ($$$) {
     my $self = shift;
+    my $line_ref = shift;
+    my $line_action_ref = shift;
 
     my ($i, $pattern, $switches, $options, $repl_func);
     my $key;
     my $s_sw;
     my $r_sw;
-    my ($line_link) = ($self->{__line_action} | $LINK);
+    my ($line_link) = (${$line_action_ref} | $LINK);
     my ($before, $linkme, $line_with_links);
 
     # for each pattern, check and alter the line
@@ -1845,15 +1877,15 @@ sub check_dictionary_links ($) {
         {
             $line_with_links = "";
             while (!$self->{__done_with_link}->[$i]
-                && $self->{__line} =~ $self->{__search_patterns}->[$i])
+                && ${$line_ref} =~ $self->{__search_patterns}->[$i])
             {
                 $self->{__done_with_link}->[$i] = 1;
-                $self->{__link_line} = $LINK if (!$self->{__link_line});
+                $line_link = $LINK if (!$line_link);
                 $before = $`;
                 $linkme = $&;
 
-                $self->{__line} =
-                  substr($self->{__line}, length($before) + length($linkme));
+                ${$line_ref} =
+                  substr(${$line_ref}, length($before) + length($linkme));
                 if (!in_link_context($linkme, $line_with_links . $before)) {
                     no strict 'refs';
                     print STDERR "Link rule $i matches $linkme\n"
@@ -1866,17 +1898,17 @@ sub check_dictionary_links ($) {
                 }
                 $line_with_links .= $before . $linkme;
             }
-            $self->{__line} = $line_with_links . $self->{__line};
+            ${$line_ref} = $line_with_links . ${$line_ref};
         }
         else {
             $line_with_links = "";
-            while ($self->{__line} =~ $self->{__search_patterns}->[$i]) {
-                $self->{__link_line} = $LINK if (!$self->{__link_line});
+            while (${$line_ref} =~ $self->{__search_patterns}->[$i]) {
+                $line_link = $LINK if (!$line_link);
                 $before = $`;
                 $linkme = $&;
 
-                $self->{__line} =
-                  substr($self->{__line}, length($before) + length($linkme));
+                ${$line_ref} =
+                  substr(${$line_ref}, length($before) + length($linkme));
                 if (!in_link_context($linkme, $line_with_links . $before)) {
                     no strict 'refs';
                     print STDERR "Link rule $i matches $linkme\n"
@@ -1889,10 +1921,10 @@ sub check_dictionary_links ($) {
                 }
                 $line_with_links .= $before . $linkme;
             }
-            $self->{__line} = $line_with_links . $self->{__line};
+            ${$line_ref} = $line_with_links . ${$line_ref};
         }
     }
-    $self->{__line_action} |= $line_link;  # Cheaper only to do bitwise OR once.
+    ${$line_action_ref} |= $line_link;  # Cheaper only to do bitwise OR once.
 }
 
 sub load_dictionary_links ($) {
@@ -1910,15 +1942,15 @@ sub load_dictionary_links ($) {
         close(DICT);
         $self->parse_dict($dict, $contents);
     }
-
-    #$self->make_dictionary_links_code();
+    $self->setup_dict_checking();
 }
 
-sub make_dictionary_links {
+sub make_dictionary_links ($$$) {
     my $self = shift;
+    my $line_ref = shift;
+    my $line_action_ref = shift;
 
-    #$self->dynamic_make_dictionary_links();
-    $self->check_dictionary_links();
+    $self->check_dictionary_links($line_ref, $line_action_ref);
     warn $@ if $@;
 }
 
@@ -1931,6 +1963,11 @@ sub getline ($) {
     $line =~ s/[ \011]*\015$//;    # Chop trailing whitespace and DOS CRs
     $line = $self->untabify($line);    # Change all tabs to spaces
     $line;
+}
+
+sub process_para ($$) {
+    my $self = shift;
+    my $para = shift;
 }
 
 sub txt2html ($;$) {
@@ -2071,14 +2108,15 @@ sub txt2html ($;$) {
 
             $self->hrule() if !($self->{__mode} & $PRE);
 
-            $self->custom_heading()
+            $self->custom_heading(\$self->{__line}, \$self->{__line_action})
               if (@{$self->custom_heading_regexp()}
                 && !($self->{__mode} & $PRE));
 
             $self->liststuff()
               if (!($self->{__mode} & $PRE) && !is_blank($self->{__line}));
 
-            $self->heading()
+            $self->heading(\$self->{__line}, \$self->{__line_action},
+			    \$self->{__nextline})
               if (!$self->explicit_headings()
                 && !($self->{__mode} & ($PRE | $HEADER))
                 && $self->{__nextline} =~ /^\s*[=\-\*\.~\+]+\s*$/);
@@ -2110,11 +2148,12 @@ sub txt2html ($;$) {
                 && !($self->{__mode} & ($PRE | $HEADER | $MAILHEADER | $BREAK))
             );
 
-            $self->caps() if !($self->{__mode} & $PRE);
+            $self->caps(\$self->{__line}, \$self->{__line_action})
+	      if !($self->{__mode} & $PRE);
 
         }
 
-        $self->make_dictionary_links()
+        $self->make_dictionary_links(\$self->{__line}, \$self->{__line_action})
           if ($self->make_links()
             && !is_blank($self->{__line})
             && @{$self->{__links_table_order}});
@@ -2150,7 +2189,7 @@ sub txt2html ($;$) {
     } until (!$self->{__nextline} && !$self->{__line} && !$self->{__prev});
 
     $self->{__prev} = "";
-    $self->endlist($self->{__listnum})
+    $self->endlist($self->{__listnum}, \$self->{__prev})
       if ($self->{__mode} & $LIST);    # End all lists
     print $outhandle $self->{__prev};
 

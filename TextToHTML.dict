@@ -11,7 +11,7 @@
 #
 
 # Some people like to mark URLs explicitly <URL:foo>
-/&lt;URL:\s*(\S+?)\s*&gt;/ -> $1
+/&lt;URL:\s*(\S+?)\s*&gt;/ -h-> <A HREF="$1">$1</A>
 
 # Urls: <service>:<rest-of-url>
 
@@ -93,13 +93,17 @@
 |(^|[^\w\d\-/\.:!])(([a-zA-Z][\w+\-]*)?www[\w+\-]*\.[\w\.+\-]+\.[a-zA-Z]{2,})([^\w\d\-/\.:!\@])|
   -h-> $1<A HREF="http://$2/">$2</A>$4
 
+#  <http://site>
+/&lt;(http:\s*\S+?)\s*&gt;/ -> $1
+
 # <site> <port>
 |([a-zA-Z][\w+\-]+\.[\w+\-]+\.[a-zA-Z]{2,})\s+(\d{2,4})|
   -h-> <A HREF="telnet://$1:$2/">$1 $2</A>
 
 # just the site name: <site>
-|([^\w\-/\.:\@>])([a-zA-Z][\w+\-]+(\.[\w+\-]+)+\.[a-zA-Z]{2,})|
-  -h-> $1<A HREF="http://$2">$2</A>/
+# But this gets mixed up with things line .tar.gz files!
+# |([^\w\-/\.:\@>])([a-zA-Z][\w+\-]+(\.[\w+\-]+)+\.[a-zA-Z]{2,})|
+#  -h-> $1<A HREF="http://$2">$2</A>/
 
 # just internet numbers with port:
 |([^\w\-/\.:\@])(\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})\s+(\d{1,4})|
@@ -124,25 +128,29 @@
 # /(.\^H_)+/ -he-> $tmp = $&;$tmp =~ s@\^H_@@g;"<U>$tmp</U>"
 # /(_\^H.)+/ -he-> $tmp = $&;$tmp =~ s@_\^H@@g;"<U>$tmp</U>"
 
+# Mark _underlined stuff_ as <U>underlined stuff</U>
+/([ \t\n])_([a-z][a-z0-9 -]*[a-z])_([ \t\n])/ -hi-> $1<U>$2</U>$3
 
-# Mark _underline stuff_ as <U>underlined stuff</U>
-/\B_([a-z][a-z ]*[a-z])_\B/ -hi-> <U>$1</U>
-
-# Use this one instead if you want it to match more aggressively.
-/\B_(\w(\w|\s|\!|\?|,|;|\.|\-)*(\w|\.|\!|\?))_\B/ -hi-> <U>$1</U>
-
-# Need special case for _x_
-/\B_([a-z])_\B/ -hi-> <U>$1</U>
+# take account of possible trailing punctuation
+/([ \t\n])_([a-z][a-z0-9 -]*[a-z])_([\.;:,\!\?])/ -hi-> $1<U>$2</U>$3
 
 # Mark *emphasized stuff* as <EM>emphasized stuff</EM>
 /\B\*([a-z][a-z -]*[a-z])\*\B/ -hi-> <EM>$1</EM>
 
 # Use this one instead if you want it to match more aggressively.
-/\B\*(\w(\w|\s|\!|\?|,|;|\.)*(\w|\.|\!|\?))\*\B/ -hi-> <EM>$1</EM>
+/\B\*(\w(\w|\s|\!|\?|,|;|:|\'|\.)*(\w|\.|\!|\?))\*\B/ -hi-> <EM>$1</EM>
 
 # We also need a special case for *x*
 /\B\*([a-z])\*\B/ -hi-> <EM>$1</EM>
 
+# Mark ##bolded stuff## as <B>bolded stuff</B>
+/\B##([a-z][a-z -]*[a-z])##\B/ -hi-> <B>$1</B>
+
+# Use this one instead if you want it to match more aggressively.
+/\B##(\w(\w|\s|\!|\?|,|;|:|\'|\.)*(\w|\.|\!|\?))##\B/ -hi-> <B>$1</B>
+
+# We also need a special case for ##x##
+/\B##([a-z])##\B/ -hi-> <B>$1</B>
 
 
 # Seth and his amazing conversion program    :-)
@@ -150,6 +158,9 @@
 "Seth Golub"  -io-> http://www.aigeek.com/
 "txt2html"    -io-> http://www.aigeek.com/txt2html/
 
+# Kathryn and her amazing conversion module 8-)
+"Kathryn Andersen"  -io-> http://www.katspace.com/
+"HTML::TextToHTML"  -io-> http://www.katspace.com/tools/text_to_html/
 
 # End of sample dictionary
 

@@ -1,8 +1,22 @@
-txt2html Sample Conversion
+HTML::TextToHTML Sample Conversion
 
-I used the following command to convert this document:
+This sample is based hugely on the original sample.txt produced
+by Seth Golub for txt2html.
 
- txt2html -tf --mail -H '^ *--[\w\s]+-- *$' -a sample.foot sample.txt > sample.html
+I used the following options to convert this document:
+
+-tf --mail --heading '^ *--[\w\s]+-- *$' --system_link_dict TextToHTML.dict
+--append_body sample.foot --infile sample.txt --outfile sample.html
+
+This has either been done at the command line with:
+
+	perl -MHTML::TextToHTML -e run_txt2html -- *options*
+
+or from a (test) perl script with:
+	
+	use HTML::TextToHTML;
+	my $conv = new HTML::TextToHTML();
+	$conv->txt2html([*options*]);
 
 ======================================================================
 
@@ -11,9 +25,9 @@ Return-Path: <bozo@clown.wustl.edu>
 Message-Id: <9405102200.AA04736@clown.wustl.edu>
 Content-Length: 1070
 From: bozo@clown.wustl.edu (Bozo the Clown)
-To: seth@aigeek.com (Seth Golub)
-Subject: Re: txt2html
-Date: Fri, 6 May 94 10:01:10 -0500
+To: rubykat@katspace.com (Kathryn Andersen)
+Subject: Re: HTML::TextToHTML
+Date: Sun, 12 May 2002 10:01:10 -0500
 
 Bozo wrote:
 BtC> Can you post an example text file with its html'ed output?
@@ -65,8 +79,8 @@ documents look like.
 
 
 
-Features of txt2html
-====================
+Features of HTML::TextToHTML
+============================
 
  * Handles different kinds of lists
    1. Bulleted
@@ -80,9 +94,8 @@ Features of txt2html
       B. Upper and lower case both work
          a) Here's an example
          b) I've been meaning to add this for some time.
-      C. Of course, HTML can't specify how ordered lists should be
-         indicated, so it may be a numbered list in some
-	 browsers. (Ok, most browsers)
+      C. HTML without CSS can't specify how ordered lists should be
+         indicated, so it will be a numbered list in most browsers.
  * Doesn't screw up mail-ish things
  * Spots preformated text sometimes
 
@@ -113,6 +126,8 @@ Features of txt2html
    The sample dictionary handles URLs like
    http://www.aigeek.com/ and also shows how to do simpler
    things such as linking the word txt2html the first time it appeared.
+ * One can also use the link-dictionary to define custom tags, for
+   example using the star character to indicate *italics*.
 
 Example of short lines
 ----------------------
@@ -124,8 +139,52 @@ With footwork impeccable.
 We dine well here in Camelot
 We eat ham and jam and spam a lot.
 
+Example of varied formatting
+----------------------------
+
+If I want to *emphasize* something, then I'd use stars to wrap
+around the words, *even if there were more than one*, *that's*
+what I'd do.  But I could also _underline_ words, so long as
+the darn thing was not a_variable_name, in which case I wouldn't
+want to lose the underscores in something which thought it was
+underlining.  Though we might want to _underline more than one word_
+in a sentence.  Especially if it is _The Title Of A Book_.
+For another kind of emphasis, let's go and ##put something in bold##.
+
+THINGS TO DO
+============
+
+There are some things which this module doesn't handle yet which
+I would like to implement. Something which would be *really
+exciting* would be coping with italics and similar things *spread
+across multiple lines*.
+
+A. I would like to be able to preserve lettered lists, that is:
+   a) recognise that they are letters and not numbers (which it already
+      does)
+   b) display the correct OL properties with CSS so as to preserve
+      that information.
+B. Related to the above, I would like to use correct XHTML, not 3.2 HTML.
+  I am not sure if I would like it to be optional.
+
+I would also like to implement tables, like the following:
+
+Written For: The First Sentinel Lyric Wheel
+Disclaimer:  The characters and concepts of The Sentinel are owned by Pet Fly
+             Productions.  I'm just borrowing them for a while.
+Rating:      PG (language)
+Summary:     After the fire, guilt and nightmare.  Hurt, angst, a little
+             comfort.
+
+Definition lists would also be cool.
+
+Fanfic:
+  Fiction based on the universe of some movie or TV show.
+Fanzine:
+  Amateur magazine produced by fans.
+
 ----------------------------------------
 
-The signature is everything from the end of this sentence to the
+The footer is everything from the end of this sentence to the
 </BODY> tag.
 

@@ -1,6 +1,12 @@
 Revision history for Perl module HTML::TextToHTML.
 ==================================================
 
+0.02  Wed 15th May 2002
+	- fixed bug with link dictionary parsing
+	- improved the tests
+	- updated link dictionary to fix a few bugs (eg underlines)
+and add a few things (like using double # for ##bold## text).
+
 0.01  Sun 12th May 2002
 	- conversion of txt2html to a module
 	- made all global settings options (eg the location of the system

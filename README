@@ -26,7 +26,11 @@ This module requires these other modules and libraries:
 
     AppConfig
     Pod::Usage
+
+For debugging and testing, it also needs:
+
     Data::Dumper
+    Test::Simple
 
 COPYRIGHT AND LICENCE
 
