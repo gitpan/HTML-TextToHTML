@@ -736,8 +736,6 @@ package HTML::TextToHTML;
 
 use 5.005_03;
 use strict;
-use warnings;
-use diagnostics;
 
 require Exporter;
 use vars qw($VERSION $PROG @ISA @EXPORT @EXPORT_OK %EXPORT_TAGS);
@@ -771,7 +769,7 @@ BEGIN {
   run_txt2html
 );
 $PROG = 'HTML::TextToHTML';
-$VERSION = '0.05';
+$VERSION = '0.06';
 
 #------------------------------------------------------------------------
 use constant TEXT_TO_HTML => "TEXT_TO_HTML";
@@ -785,7 +783,7 @@ use constant TEXT_TO_HTML => "TEXT_TO_HTML";
 # previous lines.  
 use vars qw($NONE $LIST $HRULE $PAR $PRE $END $BREAK $HEADER
   $MAILHEADER $MAILQUOTE $CAPS $LINK $PRE_EXPLICIT $TABLE
-  $IND_BREAK);
+  $IND_BREAK $LIST_START $LIST_ITEM);
 
 $NONE         = 0;
 $LIST         = 1;
@@ -802,6 +800,8 @@ $LINK         = 1024;
 $PRE_EXPLICIT = 2048;
 $TABLE        = 4096;
 $IND_BREAK    = 8192;
+$LIST_START   = 16384;
+$LIST_ITEM    = 32768;
 
 # Constants for Ordered Lists and Unordered Lists.  
 # I use this in the list stack to keep track of what's what.
@@ -1418,32 +1418,36 @@ sub escape ($) {
     return $text;
 }
 
-sub hrule ($;$$$) {
+sub hrule ($$$$) {
     my $self            = shift;
-    my $line_ref        = (@_ ? shift: \$self->{__line});
-    my $line_action_ref = (@_ ? shift: \$self->{__line_action});
-    my $prev_ref        = (@_ ? shift: \$self->{__prev});
+    my $para_lines_ref  = shift;
+    my $para_action_ref = shift;
+    my $ind		= shift;
 
     my $hrmin = $self->hrule_min();
-    if (${$line_ref} =~ /^\s*([-_~=\*]\s*){$hrmin,}$/) {
-        ${$line_ref} = "<HR>\n";
-        ${$prev_ref} =~ s/<P>//;
-        ${$line_action_ref} |= $HRULE;
+    if ($para_lines_ref->[$ind] =~ /^\s*([-_~=\*]\s*){$hrmin,}$/) {
+        $para_lines_ref->[$ind] = "<HR>\n";
+	if ($ind != 0)
+	{
+	    $para_lines_ref->[$ind - 1] =~ s/<P>//;
+	}
+	$para_action_ref->[$ind] |= $HRULE;
     }
-    elsif (${$line_ref} =~ /\014/) {
-        ${$line_action_ref} |= $HRULE;
-        ${$line_ref} =~ s/\014/\n<HR>\n/g;   # Linefeeds become horizontal rules
+    elsif ($para_lines_ref->[$ind] =~ /\014/) {
+	$para_action_ref->[$ind] |= $HRULE;
+	# Linefeeds become horizontal rules
+        $para_lines_ref->[$ind] =~ s/\014/\n<HR>\n/g;
     }
 }
 
-sub shortline ($;$$$$$$) {
+sub shortline ($$$$$$$) {
     my $self            = shift;
-    my $mode_ref        = (@_ ? shift: \$self->{__mode});
-    my $line_ref        = (@_ ? shift: \$self->{__line});
-    my $line_action_ref = (@_ ? shift: \$self->{__line_action});
-    my $prev_ref        = (@_ ? shift: \$self->{__prev});
-    my $prev_action_ref = (@_ ? shift: \$self->{__prev_action});
-    my $prev_line_len   = (@_ ? shift: $self->{__prev_line_length});
+    my $mode_ref        = shift;
+    my $line_ref        = shift;
+    my $line_action_ref = shift;
+    my $prev_ref        = shift;
+    my $prev_action_ref = shift;
+    my $prev_line_len   = shift;
 
     # Short lines should be broken even on list item lines iff the
     # following line is more text.  I haven't figured out how to do
@@ -1462,13 +1466,13 @@ sub shortline ($;$$$$$$) {
     }
 }
 
-sub mailstuff ($;$$$$$) {
+sub mailstuff ($$$$$$) {
     my $self            = shift;
-    my $line_ref        = (@_ ? shift: \$self->{__line});
-    my $line_action_ref = (@_ ? shift: \$self->{__line_action});
-    my $prev_ref        = (@_ ? shift: \$self->{__prev});
-    my $prev_action_ref = (@_ ? shift: \$self->{__prev_action});
-    my $next_ref        = (@_ ? shift: \$self->{__nextline});
+    my $line_ref        = shift;
+    my $line_action_ref = shift;
+    my $prev_ref        = shift;
+    my $prev_action_ref = shift;
+    my $next_ref        = shift;
 
     if (((${$line_ref} =~ /^\w*&gt/)    # Handle "FF> Werewolves."
         || (${$line_ref} =~ /^\w*\|/))    # Handle "Igor| There wolves."
@@ -1513,15 +1517,15 @@ sub subtract_modes ($$) {
     return ($vector | $mask) - $mask;
 }
 
-sub paragraph ($;$$$$$) {
+sub paragraph ($$$$$$) {
     my $self            = shift;
-    my $mode_ref        = (@_ ? shift: \$self->{__mode});
-    my $line_ref        = (@_ ? shift: \$self->{__line});
-    my $line_action_ref = (@_ ? shift: \$self->{__line_action});
-    my $prev_ref        = (@_ ? shift: \$self->{__prev});
-    my $prev_action_ref = (@_ ? shift: \$self->{__prev_action});
-    my $line_indent     = (@_ ? shift: $self->{__line_indent});
-    my $prev_indent     = (@_ ? shift: $self->{__prev_indent});
+    my $mode_ref        = shift;
+    my $line_ref        = shift;
+    my $line_action_ref = shift;
+    my $prev_ref        = shift;
+    my $prev_action_ref = shift;
+    my $line_indent     = shift;
+    my $prev_indent     = shift;
 
     if (!is_blank(${$line_ref})
         && !(${$mode_ref} & ($PRE | $TABLE))
@@ -1618,11 +1622,14 @@ sub listprefix ($) {
     ($prefix, $number, $rawprefix);
 }
 
-sub startlist ($$$$$) {
-    my $self      = shift;
-    my $prefix    = shift;
-    my $number    = shift;
-    my $rawprefix = shift;
+sub startlist ($$$$$$$$) {
+    my $self		= shift;
+    my $prefix		= shift;
+    my $number		= shift;
+    my $rawprefix	= shift;
+    my $para_lines_ref	= shift;
+    my $para_action_ref	= shift;
+    my $ind		= shift;
     my $prev_ref  = shift;
 
     $self->{__listprefix}->[$self->{__listnum}] = $prefix;
@@ -1642,26 +1649,35 @@ sub startlist ($$$$$) {
 
     $self->{__listnum}++;
     $self->{__list_indent} = " " x $self->{__listnum} x $self->indent_width();
-    $self->{__line_action} |= $LIST;
+    $para_action_ref->[$ind] |= $LIST;
+    $para_action_ref->[$ind] |= $LIST_START;
     $self->{__mode} |= $LIST;
     1;
 }
 
 # End N lists
-sub endlist ($$$;$) {
+sub endlist ($$$$) {
     my $self            = shift;
     my $n               = shift;
     my $prev_ref        = shift;
-    my $line_action_ref = (@_ ? shift: \$self->{__line_action});
+    my $line_action_ref = shift;
 
     for (; $n > 0 ; $n--, $self->{__listnum}--) {
         $self->{__list_indent} =
           " " x ($self->{__listnum} - 1) x $self->indent_width();
         if ($self->{__list}->[$self->{__listnum} - 1] == $UL) {
             ${$prev_ref} .= $self->{__list_indent} . "</UL>\n";
+#	    if ($self->{__listnum} > 1)
+#	    {
+#		${$prev_ref} .= $self->{__list_indent} . "</LI>\n";
+#	    }
         }
         elsif ($self->{__list}->[$self->{__listnum} - 1] == $OL) {
             ${$prev_ref} .= $self->{__list_indent} . "</OL>\n";
+#	    if ($self->{__listnum} > 1)
+#	    {
+#		${$prev_ref} .= $self->{__list_indent} . "</LI>\n";
+#	    }
         }
         else {
             print STDERR "Encountered list of unknown type\n";
@@ -1671,36 +1687,60 @@ sub endlist ($$$;$) {
     $self->{__mode} ^= $LIST if (!$self->{__listnum});
 }
 
-sub continuelist ($$$) {
+sub continuelist ($$$$) {
     my $self            = shift;
-    my $line_ref        = shift;
-    my $line_action_ref = shift;
+    my $para_lines_ref	= shift;
+    my $para_action_ref	= shift;
+    my $ind		= shift;
 
     my $list_indent = $self->{__list_indent};
-    ${$line_ref} =~ s/^\s*[-=o\*\267]+\s*/$list_indent<LI>/
-      if $self->{__list}->[$self->{__listnum} - 1] == $UL;
-    ${$line_ref} =~ s/^\s*(\d+|[^\W\d_]).\s*/$list_indent<LI>/
-      if $self->{__list}->[$self->{__listnum} - 1] == $OL;
-    ${$line_action_ref} |= $LIST;
+    if ($self->{__list}->[$self->{__listnum} - 1] == $UL
+	&& $para_lines_ref->[$ind] =~ /^\s*[-=o\*\267]+\s*/)
+    {
+#	if ($ind > 0
+#	    && ($para_action_ref->[$ind - 1] & $LIST_ITEM))
+#	{
+#	    $para_lines_ref->[$ind - 1] .= "</LI>";
+#	}
+	$para_lines_ref->[$ind] =~ s/^\s*[-=o\*\267]+\s*/$list_indent<LI>/;
+	$para_action_ref->[$ind] |= $LIST_ITEM;
+    }
+    if ($self->{__list}->[$self->{__listnum} - 1] == $OL)
+    {
+#	if ($ind > 0
+#	    && ($para_action_ref->[$ind - 1] & $LIST_ITEM))
+#	{
+#	    $para_lines_ref->[$ind - 1] .= "</LI>";
+#	}
+	$para_lines_ref->[$ind] =~ s/^\s*(\d+|[^\W\d_]).\s*/$list_indent<LI>/;
+	$para_action_ref->[$ind] |= $LIST_ITEM;
+    }
+    $para_action_ref->[$ind] |= $LIST;
 }
 
-sub liststuff ($;$$$$$) {
+sub liststuff ($$$$$$) {
     my $self            = shift;
-    my $line_ref        = (@_ ? shift: \$self->{__line});
-    my $line_action_ref = (@_ ? shift: \$self->{__line_action});
-    my $line_indent_ref = (@_ ? shift: \$self->{__line_indent});
-    my $prev_ref        = (@_ ? shift: \$self->{__prev});
-    my $prev_action_ref = (@_ ? shift: \$self->{__prev_action});
+    my $para_lines_ref	= shift;
+    my $para_action_ref	= shift;
+    my $para_line_indent_ref = shift;
+    my $ind		= shift;
+    my $prev_ref	= shift;
 
     my $i;
 
-    my ($prefix, $number, $rawprefix) = listprefix(${$line_ref});
+    my ($prefix, $number, $rawprefix) = listprefix($para_lines_ref->[$ind]);
 
     if (!$prefix) {
-        return if !is_blank(${$prev_ref});    # inside a list item
+	# if the previous line is not blank
+	if ($ind > 0 && !is_blank($para_lines_ref->[$ind - 1]))
+	{
+	    # inside a list item
+	    return;
+	}
              # This ain't no list.  We'll want to end all of them.
         if ($self->{__listnum}) {
-            $self->endlist($self->{__listnum}, $prev_ref, $line_action_ref);
+            $self->endlist($self->{__listnum}, $prev_ref,
+		\$para_action_ref->[$ind]);
         }
         return;
     }
@@ -1729,22 +1769,28 @@ sub liststuff ($;$$$$$) {
     # prefix starts.  This won't screw anything up, and if we don't do
     # it, the next line might appear to be indented relative to this
     # line, and get tagged as a new paragraph.
-    my ($total_prefix) = ${$line_ref} =~ /^(\s*[\w=o\*-]+.\s*)/;
+    my ($total_prefix) = $para_lines_ref->[$ind] =~ /^(\s*[\w=o\*-]+.\s*)/;
 
     # Of course, we only use it if it really turns out to be a list.
 
     $islist = 1;
     $i++;
     if (($i > 0) && ($i != $self->{__listnum})) {
-        $self->endlist($self->{__listnum} - $i, $prev_ref, $line_action_ref);
+        $self->endlist($self->{__listnum} - $i, $prev_ref,
+		\$para_action_ref->[$ind]);
         $islist = 0;
     }
     elsif (!$self->{__listnum} || ($i != $self->{__listnum})) {
-        if ((${$line_indent_ref} > 0)
-            || is_blank(${$prev_ref})
-            || (${$prev_action_ref} & ($BREAK | $HEADER | $CAPS)))
+        if (($para_line_indent_ref->[$ind] > 0)
+	    || $ind == 0
+            || ($ind > 0 && is_blank($para_lines_ref->[$ind - 1]))
+            || ($ind > 0
+		&& $para_action_ref->[$ind - 1] & ($BREAK | $HEADER | $CAPS))
+	    )
         {
-            $islist = $self->startlist($prefix, $number, $rawprefix, $prev_ref);
+            $islist = $self->startlist($prefix, $number, $rawprefix,
+		$para_lines_ref, $para_action_ref, $ind,
+		$prev_ref);
         }
         else {
 
@@ -1754,9 +1800,9 @@ sub liststuff ($;$$$$$) {
         }
     }
 
-    $self->continuelist($line_ref, $line_action_ref)
+    $self->continuelist($para_lines_ref, $para_action_ref, $ind)
       if ($self->{__mode} & $LIST);
-    ${$line_indent_ref} = length($total_prefix) if $islist;
+    $para_line_indent_ref->[$ind] = length($total_prefix) if $islist;
 }
 
 sub tablestuff ($$$) {
@@ -1862,41 +1908,59 @@ sub is_preformatted ($$) {
     return $result;
 }
 
-sub endpreformat ($;$$$$) {
+sub endpreformat ($$$$$) {
     my $self            = shift;
-    my $mode_ref        = (@_ ? shift: \$self->{__mode});
-    my $line_ref        = (@_ ? shift: \$self->{__line});
-    my $line_action_ref = (@_ ? shift: \$self->{__line_action});
-    my $prev_ref        = (@_ ? shift: \$self->{__prev});
-    my $next_ref        = (@_ ? shift: \$self->{__nextline});
+    my $mode_ref        = shift;
+    my $para_lines_ref  = shift;
+    my $para_action_ref = shift;
+    my $ind		= shift;
+    my $prev_ref        = shift;
 
     if (${$mode_ref} & $PRE_EXPLICIT) {
-        if (${$line_ref} =~ /$self->preformat_end_marker()/io) {
-            ${$prev_ref} .= "</PRE>\n";
-            ${$line_ref} = "";
+        if ($para_lines_ref->[$ind] =~ /$self->preformat_end_marker()/io) {
+	    if ($ind == 0)
+	    {
+		$para_lines_ref->[$ind] = "</PRE>\n";
+	    }
+	    else
+	    {
+		$para_lines_ref->[$ind - 1] .= "</PRE>\n";
+		$para_lines_ref->[$ind] = "";
+	    }
             ${$mode_ref} ^= (($PRE | $PRE_EXPLICIT) & ${$mode_ref});
-            ${$line_action_ref} |= $END;
+	    $para_action_ref->[$ind] |= $END;
         }
         return;
     }
 
-    if (!$self->is_preformatted(${$line_ref})
+    if (!$self->is_preformatted($para_lines_ref->[$ind])
         && ($self->endpreformat_trigger_lines() == 1
-            || !$self->is_preformatted(${$next_ref})))
+            || ($ind + 1 < @{$para_lines_ref}
+		&& !$self->is_preformatted($para_lines_ref->[$ind + 1]))
+	    || $ind + 1 >= @{$para_lines_ref} # last line of para
+		)
+	)
     {
-        ${$prev_ref} .= "</PRE>\n";
+	if ($ind == 0)
+	{
+	    ${$prev_ref} = "</PRE>\n";
+	}
+	else
+	{
+	    $para_lines_ref->[$ind - 1] .= "</PRE>\n";
+	}
         ${$mode_ref} ^= ($PRE & ${$mode_ref});
-        ${$line_action_ref} |= $END;
+	$para_action_ref->[$ind] |= $END;
     }
 }
 
-sub preformat ($;$$$$$) {
+sub preformat ($$$$$$) {
     my $self            = shift;
-    my $mode_ref        = (@_ ? shift: \$self->{__mode});
-    my $line_ref        = (@_ ? shift: \$self->{__line});
-    my $line_action_ref = (@_ ? shift: \$self->{__line_action});
-    my $prev_ref        = (@_ ? shift: \$self->{__prev});
-    my $next_ref        = (@_ ? shift: \$self->{__nextline});
+    my $mode_ref        = shift;
+    my $line_ref        = shift;
+    my $line_action_ref = shift;
+    my $prev_ref        = shift;
+    my $next_ref        = shift;
 
     if ($self->use_preformat_marker()) {
         my $pstart = $self->preformat_start_marker();
@@ -2014,24 +2078,28 @@ sub heading ($$$$) {
     ${$line_action_ref} |= $HEADER;
 }
 
-sub custom_heading ($$$) {
+sub custom_heading ($$$$) {
     my $self            = shift;
+    my $para_lines_ref  = shift;
+    my $para_action_ref = shift;
+    my $ind		= shift;
+
     my $line_ref        = shift;
     my $line_action_ref = shift;
 
     my ($i, $level);
     for ($i = 0 ; $i < @{$self->custom_heading_regexp()} ; $i++) {
         my $reg = ${$self->custom_heading_regexp()}[$i];
-        if (${$line_ref} =~ /$reg/) {
+        if ($para_lines_ref->[$ind] =~ /$reg/) {
             if ($self->explicit_headings()) {
                 $level = $i + 1;
             }
             else {
                 $level = $self->heading_level("Cust" . $i);
             }
-            $self->tagline("H" . $level, $line_ref);
-            $self->anchor_heading($level, $line_ref);
-            ${$line_action_ref} |= $HEADER;
+            $self->tagline("H" . $level, \$para_lines_ref->[$ind]);
+            $self->anchor_heading($level, \$para_lines_ref->[$ind]);
+            $para_action_ref->[$ind] |= $HEADER;
             last;
         }
     }
@@ -2494,28 +2562,22 @@ sub process_para ($$) {
             if (($self->{__mode} & $PRE)
                 && ($self->preformat_trigger_lines() != 0))
             {
-                $self->endpreformat(
-                    \$self->{__mode},       \$para_lines[$i],
-                    \$para_line_action[$i], $prev_ref,
-                    $next_ref
-                );
+                $self->endpreformat(\$self->{__mode},
+		    \@para_lines, \@para_line_action, $i, $prev_ref);
             }
             if (!($self->{__mode} & $PRE)) {
-                $self->hrule(\$para_lines[$i], \$para_line_action[$i],
-                    $prev_ref);
+                $self->hrule(\@para_lines, \@para_line_action, $i);
             }
             if (@{$self->custom_heading_regexp()} && !($self->{__mode} & $PRE))
             {
-                $self->custom_heading(\$para_lines[$i], \$para_line_action[$i]);
+                $self->custom_heading(\@para_lines, \@para_line_action, $i);
             }
             if (!($self->{__mode} & ($PRE | $TABLE))
                 && !is_blank($para_lines[$i]))
             {
                 $self->liststuff(
-                    \$para_lines[$i],       \$para_line_action[$i],
-                    \$para_line_indent[$i], $prev_ref,
-                    $prev_action_ref
-                );
+                    \@para_lines,       \@para_line_action,
+                    \@para_line_indent, $i, $prev_ref);
             }
             if (!$self->explicit_headings()
                 && !($self->{__mode} & ($PRE | $HEADER | $TABLE))
@@ -2759,8 +2821,11 @@ sub txt2html ($;$) {
     }
 
     $self->{__prev} = "";
-    $self->endlist($self->{__listnum}, \$self->{__prev})
-      if ($self->{__mode} & $LIST);    # End all lists
+    if ($self->{__mode} & $LIST)    # End all lists
+    {
+	$self->endlist($self->{__listnum},
+			\$self->{__prev}, \$self->{__line_action})
+    }
     print $outhandle $self->{__prev};
 
     #print $outhandle "\n";

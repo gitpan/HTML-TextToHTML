@@ -1,6 +1,10 @@
 Revision history for Perl module HTML::TextToHTML.
 ==================================================
 
+0.06  Mon 2nd September 2002
+	- fine-tuned some of the links in the default links dictionary
+	- some internal rewriting
+
 0.05  Wed 5th June 2002
 	- fixed minor bugs
 

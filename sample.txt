@@ -129,8 +129,8 @@ Features of HTML::TextToHTML
  * Groks Mosaic-style "formatted text" headers (like the one below)
 
  * Can hyperlink things according to a dictionary file.
-   The sample dictionary handles URLs like
-   http://www.aigeek.com/ and also shows how to do simpler
+   The sample dictionary handles URLs like http://www.aigeek.com/ and
+   <http://www.katspace.com/> and also shows how to do simpler
    things such as linking the word txt2html the first time it appeared.
  * One can also use the link-dictionary to define custom tags, for
    example using the star character to indicate *italics*.

@@ -18,6 +18,9 @@
 # Some people like to mark URLs explicitly <URL:foo>
 /&lt;URL:\s*(\S+?)\s*&gt;/ -h-> <A HREF="$1">$1</A>
 
+#  <http://site>
+/&lt;(http:\s*\S+?)\s*&gt;/ -> $1
+
 # Urls: <service>:<rest-of-url>
 
 |snews:[\w\.]+|        -> $&
@@ -97,9 +100,6 @@
 # host with "www" in the machine name
 |(^|[^\w\d\-/\.:!])(([a-zA-Z][\w+\-]*)?www[\w+\-]*\.[\w\.+\-]+\.[a-zA-Z]{2,})([^\w\d\-/\.:!\@])|
   -h-> $1<A HREF="http://$2/">$2</A>$4
-
-#  <http://site>
-/&lt;(http:\s*\S+?)\s*&gt;/ -> $1
 
 # <site> <port>
 |([a-zA-Z][\w+\-]+\.[\w+\-]+\.[a-zA-Z]{2,})\s+(\d{2,4})|
