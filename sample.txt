@@ -6,7 +6,7 @@ by Seth Golub for txt2html.
 I used the following options to convert this document:
 
      -tf --mail --tables --heading '^ *--[\w\s]+-- *$'
-     --system_link_dict TextToHTML.dict
+     --system_link_dict TextToHTML.dict --link section.dict
      --append_body sample.foot --infile sample.txt --outfile sample.html
 
 This has either been done at the command line with:

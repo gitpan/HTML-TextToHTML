@@ -5,7 +5,7 @@
 
 # change 'tests => 1' to 'tests => last_test_to_print';
 
-use Test::More tests => 7;
+use Test::More tests => 11;
 use HTML::TextToHTML;
 ok(1); # If we made it this far, we're ok.
 
@@ -77,6 +77,7 @@ ok( $conv->isa('HTML::TextToHTML'), "  and it's the right class" );
 @args = ();
 push @args, "--system_link_dict", "TextToHTML.dict";
 push @args, "--default_link_dict", "";
+#push @args, "--link", "section.dict";
 push @args, "--file", "sample.txt";
 push @args, "--outfile", "sample.html";
 push @args, "--append_file", "sample.foot";
@@ -84,13 +85,14 @@ push @args, "-tf", "--mail";
 push @args, "-H", '^ *--[\w\s]+-- *$';
 push @args, "--make_tables";
 #push @args, "--debug";
-#push @args, "--dict_debug", "7";
+#push @args, "--dict_debug", "15";
 $result = $conv->txt2html(\@args);
 ok($result, 'converted sample.txt');
 
 # compare the files
 $result = compare('good_sample.html', 'sample.html');
 ok($result, 'test file matches original example exactly');
+unlink('sample.html');
 
 # test the process_para method alone
 $test_str = "Matty had a little truck
@@ -114,3 +116,60 @@ ok($out_str, 'converted sample string');
 
 # compare the result
 is($out_str, $ok_str, 'compare converted string with OK string');
+
+# test the process_para method with an ordered list
+$test_str = "Here is my list:
+
+1. Spam
+2. Jam
+3. Ham
+4. Pickles
+";
+
+$ok_str = "<P>Here is my list:
+
+<OL>
+  <LI>Spam
+  <LI>Jam
+  <LI>Ham
+  <LI>Pickles
+</OL>
+";
+@args = ();
+push @args, "--file", "CLEAR";
+push @args, "--outfile", "-";
+push @args, "--append_file", "";
+
+$out_str = $conv->process_para($test_str);
+ok($out_str, 'converted sample string with list');
+
+# compare the result
+is($out_str, $ok_str, 'compare converted list string with OK list string');
+
+# test the file with XHTML on
+$conv = undef;
+$conv = new HTML::TextToHTML();
+
+@args = ();
+#push @args, "--debug";
+#push @args, "--dict_debug", "15";
+push @args, "--system_link_dict", "TextToHTML.dict";
+push @args, "--default_link_dict", "";
+#push @args, "--link", "section.dict";
+push @args, "--file", "sample.txt";
+push @args, "--xhtml"; 
+push @args, "--outfile", "xhtml_sample.html";
+push @args, "--append_file", "sample.foot2";
+push @args, "-tf", "--mail";
+push @args, "-H", '^ *--[\w\s]+-- *$';
+push @args, "--make_tables";
+push @args, "--make_anchors";
+
+$result = $conv->txt2html(\@args);
+ok($result, 'converted lower-case sample.txt');
+
+# compare the files
+$result = compare('good_xhtml_sample.html', 'xhtml_sample.html');
+ok($result, 'test file xhtml_sample.html matches original good_xhtml_sample.html exactly');
+
+unlink('xhtml_sample.html');

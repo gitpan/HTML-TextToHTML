@@ -13,13 +13,13 @@
 #
 
 # Some people even like to mark the URL label explicitly <URL:foo:label>
-/&lt;URL:([-\w\.\/:~_\@]+):([a-zA-Z ]+)&gt;/ -h-> <A HREF="$1">$2</A>
+/&lt;URL:([-\w\.\/:~_\@]+):([a-zA-Z0-9'() ]+)&gt;/ -h-> <A HREF="$1">$2</A>
 
 # Some people like to mark URLs explicitly <URL:foo>
 /&lt;URL:\s*(\S+?)\s*&gt;/ -h-> <A HREF="$1">$1</A>
 
 #  <http://site>
-/&lt;(http:\s*\S+?)\s*&gt;/ -> $1
+/&lt;(http:\S+?)\s*&gt;/ -h-> &lt;<A HREF="$1">$1</A>&gt;
 
 # Urls: <service>:<rest-of-url>
 
@@ -141,9 +141,7 @@
 #/\B\*([a-z][a-z -]*[a-z])\*\B/ -hi-> <EM>$1</EM>
 
 # Use this one instead if you want it to match more aggressively.
-# /\B\*(\w(\w|\s|\!|\?|,|;|:|-|_|\'|\"|\.)*(\w|\"|\'|\.|,|:|\!|\?))\*\B/ -hi-> <EM>$1</EM>
-
-/\B\*((\w|\s|\!|\?|,|;|:|-|_|\/|\(|\)|#|%|<u>|<\/u>|<br>|<p>|&nbsp;|<strong>|<\/strong>|\'|\"|\.)*(\w|\"|\'|\.|\!|\?))\*\B/ -hi-> <EM>$1</EM>
+/\*((\w|["'])+(\w|\s|[-!?,:;._\"\'<>#%&=+\/\$]+)+)\*/ -hi-> <EM>$1</EM>
 
 # We also need a special case for *x*
 /\B\*([a-z])\*\B/ -hi-> <EM>$1</EM>

@@ -1,6 +1,18 @@
 Revision history for Perl module HTML::TextToHTML.
 ==================================================
 
+0.07  Sun 17th November 2002
+	- fixed a bug in process_para to ensure that if one is using it
+standalone, any open lists will be closed
+	- added --lower_case_tags option to force the tags to be output
+in lower-case
+	- first pass at XHTML conformance; added --xhtml option, which
+	  * forces lower-case on
+	  * makes empty tags have the empty marker (eg <hr/>)
+	  * closes all open P and LI tags where they should be closed
+	  * table cell alignments are done as style attributes
+It isn't that pretty-looking, but the sample does pass the scrutiny of "tidy".
+
 0.06  Mon 2nd September 2002
 	- fine-tuned some of the links in the default links dictionary
 	- some internal rewriting
