@@ -1,4 +1,4 @@
-HTML/TextToHTML version 1.10
+HTML/TextToHTML version 1.12
 ============================
 
 HTML::TextToHTML converts plain text files into HTML.  It is originally
@@ -40,7 +40,7 @@ For debugging and testing, it also needs:
 
 COPYRIGHT AND LICENCE
 
-Original txt2html script copyright (C) 2000 Seth Golub <seth@aigeek.com>
-Copyright (C) 2002 Kathryn Andersen <rubykat@katspace.com>  All rights
+Original txt2html script copyright (C) 2000 Seth Golub <seth AT aigeek.com>
+Copyright (C) 2002 Kathryn Andersen  All rights
 reserved.  This program is free software; you can redistribute it and/or
 modify it under the same terms as Perl itself.

@@ -31,7 +31,7 @@ Return-Path: <bozo@clown.wustl.edu>
 Message-Id: <9405102200.AA04736@clown.wustl.edu>
 Content-Length: 1070
 From: bozo@clown.wustl.edu (Bozo the Clown)
-To: rubykat@katspace.com (Kathryn Andersen)
+To: kitty@example.com (Kathryn Andersen)
 Subject: Re: HTML::TextToHTML
 Date: Sun, 12 May 2002 10:01:10 -0500
 

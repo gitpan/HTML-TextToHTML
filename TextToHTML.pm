@@ -113,9 +113,9 @@ must be added to the list.
 If you want something appended by default, put the filename here.
 The appended text will not be processed at all, so make sure it's
 plain text or decent HTML.  i.e. do not have things like:
-    Kathryn Andersen E<lt>rubykat@katspace.comE<gt>
+    Mary Andersen E<lt>kitty@example.comE<gt>
 but instead, have:
-    Kathryn Andersen &lt;rubykat@katspace.com&gt;
+    Mary Andersen &lt;kitty@example.com&gt;
 
 (default: nothing)
 
@@ -126,9 +126,9 @@ but instead, have:
 If you want something appended to the head by default, put the filename here.
 The appended text will not be processed at all, so make sure it's
 plain text or decent HTML.  i.e. do not have things like:
-    Kathryn Andersen E<lt>rubykat@katspace.comE<gt>
+    Mary Andersen E<lt>kitty@example.comE<gt>
 but instead, have:
-    Kathryn Andersen &lt;rubykat@katspace.com&gt;
+    Mary Andersen &lt;kitty@example.com&gt;
 
 (default: nothing)
 
@@ -562,7 +562,7 @@ BEGIN {
   run_txt2html
 );
 $PROG = 'HTML::TextToHTML';
-$VERSION = '1.10';
+$VERSION = '1.12';
 
 #------------------------------------------------------------------------
 use constant TEXT_TO_HTML => "TEXT_TO_HTML";
@@ -3033,8 +3033,8 @@ run_txt2html
 
 =head1 AUTHOR
 
-Kathryn Andersen, E<lt>rubykat@katspace.comE<gt> 2002
-Original txt2html script copyright (C) 2000 Seth Golub <seth@aigeek.com>
+Kathryn Andersen, E<lt>http//www.katspace.comE<gt> 2002,2003
+Original txt2html script copyright (C) 2000 Seth Golub <seth AT aigeek.com>
 
 =head1 SEE ALSO
 

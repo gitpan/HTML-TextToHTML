@@ -37,5 +37,5 @@ WriteMakefile(
     'EXE_FILES' => ['texthyper'],
     ($] >= 5.005 ?    ## Add these new keywords supported since 5.005
       (ABSTRACT_FROM => 'TextToHTML.pm', # retrieve abstract from module
-       AUTHOR     => 'Kathryn Andersen <rubykat@katspace.com>') : ()),
+       AUTHOR     => 'Kathryn Andersen') : ()),
 );

@@ -70,9 +70,9 @@ See L<Options Files> for more information.
 If you want something appended by default, put the filename here.
 The appended text will not be processed at all, so make sure it's
 plain text or decent HTML.  i.e. do not have things like:
-    Kathryn Andersen E<lt>rubykat@example.comE<gt>
+    Mary Andersen E<lt>kitty@example.comE<gt>
 but instead, have:
-    Kathryn Andersen &lt;rubykat@example.com&gt;
+    Mary Andersen &lt;kitty@example.com&gt;
 
 (default: nothing)
 
@@ -81,9 +81,9 @@ but instead, have:
 If you want something appended to the head by default, put the filename here.
 The appended text will not be processed at all, so make sure it's
 plain text or decent HTML.  i.e. do not have things like:
-    Kathryn Andersen E<lt>rubykat@example.comE<gt>
+    Mary Andersen E<lt>kitty@example.comE<gt>
 but instead, have:
-    Kathryn Andersen &lt;rubykat@example.com&gt;
+    Mary Andersen &lt;kitty@example.com&gt;
 
 (default: nothing)
 
@@ -608,15 +608,15 @@ Getopt::ArgvFile
 
 =head1 AUTHOR
 
-Kathryn Andersen      rubykat@katspace.com    http://www.katspace.com
+Kathryn Andersen      http://www.katspace.com
 based on txt2html by Seth Golub
 
 
 =head1 COPYRIGHT
 
-Original txt2html script copyright (C) 1994-2000 Seth Golub seth@aigeek.com
-Copyright (C) 2002 Kathryn Andersen rubykat@katspace.com  All rights
-reserved.  This program is free software; you can redistribute it and/or
+Original txt2html script copyright (C) 1994-2000 Seth Golub seth AT aigeek.com
+Copyright (C) 2002 Kathryn Andersen All rights reserved.
+This program is free software; you can redistribute it and/or
 modify it under the same terms as Perl itself.
 
 =head1 HISTORY
@@ -642,7 +642,7 @@ documentation of HTML::TextToHTML.
 # Globals
 #
 use vars qw($VERSION);
-$VERSION = '1.10';
+$VERSION = '1.12';
 
 #################################################################
 # Includes
@@ -677,10 +677,11 @@ sub process_args ($) {
 
     # check the rc file if we can
     if (eval("require Getopt::ArgvFile")) {
-	my $nameBuilder=sub { my $bn = basename($0, ''); return ".${bn}rc";};
+	no strict;
+	my $bn = basename($0, '');
+	my $rc_name = ".${bn}rc";
 	Getopt::ArgvFile::argvFile(
-	    startupFilename=>$nameBulder,
-	    startupFilename=>$nameBulder,
+	    startupFilename=>$rc_name,
 	    home=>1,
 	    current=>1);
     }
