@@ -100,7 +100,7 @@ Features of HTML::TextToHTML
          a) Here's an example
          b) I've been meaning to add this for some time.
       C. HTML without CSS can't specify how ordered lists should be
-         indicated, so it will be a numbered list in most browsers.
+        indicated, so it will be a numbered list in most browsers.
  * Doesn't screw up mail-ish things
  * Spots preformated text
 
@@ -159,8 +159,7 @@ want to lose the underscores in something which thought it was
 underlining.  Though we might want to _underline more than one word_
 in a sentence.  Especially if it is _The Title Of A Book_.
 For another kind of emphasis, let's go and #put something in bold#.
-
-But it doesn't even need to be that simple. Something which is *really
+   But it doesn't even need to be that simple. Something which is *really
 exciting* is coping with italics and similar things *spread across
 multiple lines*.
 
@@ -208,8 +207,6 @@ Here are some of the conditions of tables:
               could have inter-word spacing that lined up by accident.
 #Cell Size:#  If you have more than one line (as just above) then
               you will simply get empty cells where the other column is empty.
-     #Tabs:#  Beware of tabs, because they are all converted to spaces
-              first, and your table may no longer line up.
 #Alignment:#  Alignment of cells is attempted to be preserved.
 
 Here's a three-column table:

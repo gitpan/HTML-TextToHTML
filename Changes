@@ -1,6 +1,12 @@
 Revision history for Perl module HTML::TextToHTML.
 ==================================================
 
+0.04  Sun 2nd June 2002
+	- fixed bug with detection of paragraphs by indentation
+	- added --indent_par_break and --preserve_indent options
+	- fixed error in documentation
+	- fixed bug with nonexistant link dictionaries
+
 0.03  Sun 26th May 2002
 	- documented the format of the Link Dictionary
 	- added the do_help method, and changed the behaviour of --help

@@ -12,6 +12,9 @@
 # http://iamwww.unibe.ch/~scg/Src/
 #
 
+# Some people even like to mark the URL label explicitly <URL:foo:label>
+/&lt;URL:([-\w\.\/:~_\@]+):([a-zA-Z ]+)&gt;/ -h-> <A HREF="$1">$2</A>
+
 # Some people like to mark URLs explicitly <URL:foo>
 /&lt;URL:\s*(\S+?)\s*&gt;/ -h-> <A HREF="$1">$1</A>
 
@@ -131,24 +134,22 @@
 # /(_\^H.)+/ -he-> $tmp = $&;$tmp =~ s@_\^H@@g;"<U>$tmp</U>"
 
 # Mark _underlined stuff_ as <U>underlined stuff</U>
-/([ \t\n])_([a-z][a-z0-9 -]*[a-z])_([ \t\n])/ -hi-> $1<U>$2</U>$3
-
 # take account of possible trailing punctuation
-/([ \t\n])_([a-z][a-z0-9 -]*[a-z])_([\.;:,\!\?])/ -hi-> $1<U>$2</U>$3
+/([ \t\n])_([a-z][a-z0-9 -]*[a-z])_([ \t\n\.;:,\!\?])/ -hi-> $1<U>$2</U>$3
 
 # Mark *emphasized stuff* as <EM>emphasized stuff</EM>
 #/\B\*([a-z][a-z -]*[a-z])\*\B/ -hi-> <EM>$1</EM>
 
 # Use this one instead if you want it to match more aggressively.
-/\B\*(\w(\w|\s|\!|\?|,|;|:|-|_|\'|\"|\.)*(\w|\"|\'|\.|,|:|\!|\?))\*\B/ -hi-> <EM>$1</EM>
+# /\B\*(\w(\w|\s|\!|\?|,|;|:|-|_|\'|\"|\.)*(\w|\"|\'|\.|,|:|\!|\?))\*\B/ -hi-> <EM>$1</EM>
 
-/\B\*((\w|\s|\!|\?|,|;|:|-|_|<u>|<\/u>|\'|\"|\.)*(\w|\"|\'|\.|\!|\?))\*\B/ -hi-> <EM>$1</EM>
+/\B\*((\w|\s|\!|\?|,|;|:|-|_|\/|\(|\)|#|%|<u>|<\/u>|<br>|<p>|&nbsp;|<strong>|<\/strong>|\'|\"|\.)*(\w|\"|\'|\.|\!|\?))\*\B/ -hi-> <EM>$1</EM>
 
 # We also need a special case for *x*
 /\B\*([a-z])\*\B/ -hi-> <EM>$1</EM>
 
 # Mark #bolded stuff# as <STRONG>bolded stuff</STRONG>
-/\B#([a-z][a-z -]*[a-z])#\B/ -hi-> <STRONG>$1</STRONG>
+# /\B#([a-z][a-z -]*[a-z])#\B/ -hi-> <STRONG>$1</STRONG>
 
 # Use this one instead if you want it to match more aggressively.
 # note that this doesn't use \w because we don't want to match numbers

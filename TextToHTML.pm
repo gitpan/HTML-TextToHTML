@@ -269,6 +269,14 @@ Min number of ---s for an HRule.
 Indents this many spaces for each level of a list.
 (default: 2)
 
+=item --indent_par_break | -ipb
+
+Treat paragraphs marked solely by indents as breaks with indents.
+That is, instead of taking a three-space indent as a new paragraph,
+put in a <BR> and three non-breaking spaces instead.
+(see also --preserve_indent)
+(default: false)
+
 =item --infile I<filename> | --file I<filename>
 
 The name of the input file.
@@ -410,6 +418,13 @@ filename here.  The prepended text will not be processed at all, so make
 sure it's plain text or decent HTML.
 
 (default: nothing)
+
+=item --preserve_indent | -pi
+
+Preserve the first-line indentation of paragraphs marked with indents
+by replacing the spaces of the first line with non-breaking spaces.
+(default: false)
+
 
 =item --short_line_length I<n> | --shortline I<n> | -s I<n>
 
@@ -757,7 +772,7 @@ BEGIN {
   run_txt2html
 );
 $PROG = 'HTML::TextToHTML';
-$VERSION = '0.03';
+$VERSION = '0.04';
 
 #------------------------------------------------------------------------
 use constant TEXT_TO_HTML => "TEXT_TO_HTML";
@@ -770,7 +785,8 @@ use constant TEXT_TO_HTML => "TEXT_TO_HTML";
 # of what modes I'm in and what actions I've taken on the current and
 # previous lines.  
 use vars qw($NONE $LIST $HRULE $PAR $PRE $END $BREAK $HEADER
-  $MAILHEADER $MAILQUOTE $CAPS $LINK $PRE_EXPLICIT $TABLE);
+  $MAILHEADER $MAILQUOTE $CAPS $LINK $PRE_EXPLICIT $TABLE
+  $IND_BREAK);
 
 $NONE         = 0;
 $LIST         = 1;
@@ -786,6 +802,7 @@ $CAPS         = 512;
 $LINK         = 1024;
 $PRE_EXPLICIT = 2048;
 $TABLE        = 4096;
+$IND_BREAK    = 8192;
 
 # Constants for Ordered Lists and Unordered Lists.  
 # I use this in the list stack to keep track of what's what.
@@ -1112,6 +1129,12 @@ sub define_vars {
             DEFAULT => 2,
         }
     );
+    $self->define(
+        "indent_par_break|ipb",
+        {
+            DEFAULT => 0,
+        }
+    );
     $self->define("infile|file=s@");    # names of files to be processed
     $self->define("links_dictionaries|link|l=s@");
     $self->define(
@@ -1201,6 +1224,12 @@ sub define_vars {
         }
     );
     $self->define(
+        "preserve_indent|pi",
+        {
+            DEFAULT => 0,
+        }
+    );
+    $self->define(
         "short_line_length|shortline|s=n",
         {
             DEFAULT => 40,
@@ -1284,6 +1313,12 @@ sub init_our_data ($) {
     my @repl_code = ();
     $self->{__repl_code}        = \@repl_code;
     $self->{__prev_para_action} = 0;
+    $self->{__non_header_anchor} = 0;
+    $self->{__mode}              = 0;
+    $self->{__listnum}           = 0;
+    $self->{__list_indent}       = "";
+
+    $self->{__call_init_done}    = 0;
 
 }    # init_our_data
 
@@ -1299,9 +1334,14 @@ sub deal_with_options ($) {
     my $self = shift;
 
     if ($self->links_dictionaries()) {
-        foreach my $ld (@{$self->links_dictionaries()}) {
+	# only put into the links dictionaries files which are readable
+	my @dict_files = @{$self->links_dictionaries()};
+	$self->args(['--link', 'CLEAR']);
+
+        foreach my $ld (@dict_files) {
             if (-r $ld) {
                 $self->set('make_links' => 1);
+		$self->args(['--link', $ld]);
             }
             else {
                 print STDERR "Can't find or read link-file $ld\n";
@@ -1315,16 +1355,19 @@ sub deal_with_options ($) {
     if ($self->append_file()) {
         if (!-r $self->append_file()) {
             print STDERR "Can't find or read ", $self->append_file(), "\n";
+	    $self->set('append_file', '');
         }
     }
     if ($self->prepend_file()) {
         if (!-r $self->prepend_file()) {
             print STDERR "Can't find or read ", $self->prepend_file(), "\n";
+	    $self->set('prepend_file', '');
         }
     }
     if ($self->append_head()) {
         if (!-r $self->append_head()) {
             print STDERR "Can't find or read ", $self->append_head(), "\n";
+	    $self->set('append_head', '');
         }
     }
 
@@ -1411,8 +1454,8 @@ sub shortline ($;$$$$$$) {
         && !is_blank(${$line_ref})
         && !is_blank(${$prev_ref})
         && ($prev_line_len < $self->short_line_length())
-        && !(${$line_action_ref} & ($END | $HEADER | $HRULE | $LIST | $PAR))
-        && !(${$prev_action_ref} & ($HEADER | $HRULE | $BREAK)))
+        && !(${$line_action_ref} & ($END | $HEADER | $HRULE | $LIST | $IND_BREAK| $PAR))
+        && !(${$prev_action_ref} & ($HEADER | $HRULE | $BREAK | $IND_BREAK)))
     {
         ${$prev_ref} .= "<BR>" . chop(${$prev_ref});
         ${$prev_action_ref} |= $BREAK;
@@ -1476,6 +1519,7 @@ sub paragraph ($;$$$$$) {
     my $line_ref        = (@_ ? shift: \$self->{__line});
     my $line_action_ref = (@_ ? shift: \$self->{__line_action});
     my $prev_ref        = (@_ ? shift: \$self->{__prev});
+    my $prev_action_ref = (@_ ? shift: \$self->{__prev_action});
     my $line_indent     = (@_ ? shift: $self->{__line_indent});
     my $prev_indent     = (@_ ? shift: $self->{__prev_indent});
 
@@ -1487,8 +1531,47 @@ sub paragraph ($;$$$$$) {
             || (${$line_action_ref} & $END)
             || ($line_indent > $prev_indent + $self->par_indent())))
     {
-        ${$prev_ref} .= "<P>";
-        ${$line_action_ref} |= $PAR;
+	if ($self->indent_par_break()
+	    && !is_blank(${$prev_ref})
+	    && !(${$line_action_ref} & $END)
+	    && ($line_indent > $prev_indent + $self->par_indent()))
+	{
+	    ${$prev_ref} .= "<BR>";
+	    ${$prev_ref} .= "&nbsp;" x $line_indent;
+	    ${$line_ref} =~ s/^ {$line_indent}//;
+	    ${$prev_action_ref} |= $BREAK;
+	    ${$line_action_ref} |= $IND_BREAK;
+	}
+	elsif ($self->preserve_indent())
+	{
+	    ${$prev_ref} .= "<P>";
+	    ${$prev_ref} .= "&nbsp;" x $line_indent;
+	    ${$line_ref} =~ s/^ {$line_indent}//;
+	    ${$line_action_ref} |= $PAR;
+	}
+	else
+	{
+	    ${$prev_ref} .= "<P>";
+	    ${$line_action_ref} |= $PAR;
+	}
+    }
+    # detect also a continuing indentation at the same level
+    elsif ($self->indent_par_break()
+        && !(${$mode_ref} & ($PRE | $TABLE | $LIST))
+	&& !is_blank(${$prev_ref})
+	&& !(${$line_action_ref} & $END)
+	&& (${$prev_action_ref} & ($IND_BREAK | $PAR))
+        && !subtract_modes(${$line_action_ref},
+            $END | $MAILQUOTE | $CAPS)
+        && ($line_indent > $self->par_indent())
+	&& ($line_indent == $prev_indent)
+	)
+    {
+	${$prev_ref} .= "<BR>";
+	${$prev_ref} .= "&nbsp;" x $line_indent;
+	${$line_ref} =~ s/^ {$line_indent}//;
+	${$prev_action_ref} |= $BREAK;
+	${$line_action_ref} |= $IND_BREAK;
     }
 }
 
@@ -1500,7 +1583,7 @@ sub count_indent ($$) {
     if (is_blank($line)) {
         return $prev_length;
     }
-    my $ws = $line =~ /^( *)[^ ]/;
+    my ($ws) = $line =~ /^( *)[^ ]/;
     return length($ws);
 }
 
@@ -2303,12 +2386,12 @@ sub load_dictionary_links ($) {
 
     foreach $dict (@{$self->links_dictionaries()}) {
         next unless $dict;
-        open(DICT, "$dict") || die "Can't open Dictionary file $dict\n";
+	    open(DICT, "$dict") || die "Can't open Dictionary file $dict\n";
 
-        $contents = "";
-        $contents .= $_ while (<DICT>);
-        close(DICT);
-        $self->parse_dict($dict, $contents);
+	    $contents = "";
+	    $contents .= $_ while (<DICT>);
+	    close(DICT);
+	    $self->parse_dict($dict, $contents);
     }
     $self->setup_dict_checking();
 }
@@ -2332,6 +2415,9 @@ sub process_para ($$) {
     my $self = shift;
     my $para = shift;
 
+    # if this is an external call, do certain initializations
+    $self->do_init_call();
+
     my $para_action = $NONE;
 
     # tables don't carry over from one para to the next
@@ -2348,17 +2434,19 @@ sub process_para ($$) {
         my $line;
         for (my $i = 0 ; $i < @para_lines ; $i++) {
             $line = $para_lines[$i];
+	    my $ind;
 
             # Chop trailing whitespace and DOS CRs
             $line =~ s/[ \011]*\015$//;
             $line = $self->untabify($line);    # Change all tabs to spaces
             push @para_line_len, length($line);
             if ($i > 0) {
-                push @para_line_indent,
-                  count_indent($line, $para_line_indent[$i - 1]);
+                $ind = count_indent($line, $para_line_indent[$i - 1]);
+                push @para_line_indent, $ind;
             }
             else {
-                push @para_line_indent, count_indent($line, 0);
+                $ind = count_indent($line, 0);
+                push @para_line_indent, $ind;
             }
             push @para_line_action, 0;
             $para_lines[$i] = $line;
@@ -2460,7 +2548,7 @@ sub process_para ($$) {
             }
             $self->paragraph(
                 \$self->{__mode},       \$para_lines[$i],
-                \$para_line_action[$i], $prev_ref,
+                \$para_line_action[$i], $prev_ref, $prev_action_ref,
                 $para_line_indent[$i],  $prev_line_indent
             );
             $self->shortline(
@@ -2592,6 +2680,32 @@ sub do_file_start ($$$) {
     }
 }
 
+# do_init_call
+# certain things, like reading link dictionaries, need to be
+# done once
+sub do_init_call ($) {
+    my $self     = shift;
+
+    if (!$self->{__call_init_done}) {
+	push (@{$self->links_dictionaries()}, ($self->default_link_dict()))
+	  if ($self->make_links() && (-f $self->default_link_dict()));
+	$self->deal_with_options();
+	if ($self->make_links()) {
+	    push (@{$self->links_dictionaries()}, ($self->system_link_dict()))
+	      if -f $self->system_link_dict();
+	    $self->load_dictionary_links();
+	}
+     
+	# various initializations
+	$self->{__non_header_anchor} = 0;
+	$self->{__mode}              = 0;
+	$self->{__listnum}           = 0;
+	$self->{__list_indent}       = "";
+
+	$self->{__call_init_done} = 1;
+    }
+}
+
 sub txt2html ($;$) {
     my $self     = shift;
     my $args_ref = (@_ ? shift: 0);
@@ -2607,14 +2721,7 @@ sub txt2html ($;$) {
     # check for help messages
     $self->do_help();
 
-    push (@{$self->links_dictionaries()}, ($self->default_link_dict()))
-      if ($self->make_links() && (-f $self->default_link_dict()));
-    $self->deal_with_options();
-    if ($self->make_links()) {
-        push (@{$self->links_dictionaries()}, ($self->system_link_dict()))
-          if -f $self->system_link_dict();
-        $self->load_dictionary_links();
-    }
+    $self->do_init_call();
 
     my $outhandle;
     my $not_to_stdout;
@@ -2631,11 +2738,6 @@ sub txt2html ($;$) {
         $not_to_stdout = 1;
     }
 
-    # various initializations
-    $self->{__non_header_anchor} = 0;
-    $self->{__mode}              = 0;
-    $self->{__listnum}           = 0;
-    $self->{__list_indent}       = "";
 
     # slurp up a paragraph at a time
     local $/ = "";
@@ -2649,7 +2751,7 @@ sub txt2html ($;$) {
                 if ($count == 0) {
                     $self->do_file_start($outhandle, $para);
                 }
-                $para = $self->process_para($para);
+                $para = $self->process_para($para, 0);
                 print $outhandle $para, "\n";
                 $count++;
             }
