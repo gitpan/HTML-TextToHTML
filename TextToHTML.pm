@@ -747,7 +747,6 @@ BEGIN {
     require Exporter;
     use AppConfig qw(:argcount);
     use Data::Dumper;
-    use HTML::SimpleParse;
     use Pod::Usage;
 }
 
@@ -772,7 +771,7 @@ BEGIN {
   run_txt2html
 );
 $PROG = 'HTML::TextToHTML';
-$VERSION = '0.04';
+$VERSION = '0.05';
 
 #------------------------------------------------------------------------
 use constant TEXT_TO_HTML => "TEXT_TO_HTML";
@@ -971,9 +970,10 @@ sub do_help ($) {
         }
     }
 
-}    # do_help
-     #---------------------------------------------------------------#
-     # AppConfig-related subroutines
+}
+
+#---------------------------------------------------------------#
+# AppConfig-related subroutines
 
 #--------------------------------#
 # Name: do_var_action
