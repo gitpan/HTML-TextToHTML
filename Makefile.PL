@@ -6,6 +6,10 @@ WriteMakefile(
     'VERSION_FROM'	=> 'TextToHTML.pm', # finds $VERSION
     'PREREQ_PM'		=> {
     		'AppConfig' => 1.52,
+		'AppConfig::Args' => 0,
+		'AppConfig::File' => 0,
+		'AppConfig::State' => 0,
+		'AppConfig::Sys' => 0,
 		'Pod::Usage' => 0,
 		'Data::Dumper' => 0,
 		'Test::More' => 0

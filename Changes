@@ -1,6 +1,13 @@
 Revision history for Perl module HTML::TextToHTML.
 ==================================================
 
+0.08  Wed 20th November 2002
+	- CPAN testers complained about a lack of explicitly stating
+all the dependencies of AppConfig, which either means that AppConfig
+has changed desperately, or their testing methods have changed, since
+I didn't think it was possible to get the AppConfig module without getting
+all its dependent modules, but, oh well.
+
 0.07  Sun 17th November 2002
 	- fixed a bug in process_para to ensure that if one is using it
 standalone, any open lists will be closed
