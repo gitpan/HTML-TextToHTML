@@ -1,0 +1,10 @@
+Makefile.PL
+MANIFEST
+README
+TODO
+Changes
+test.pl
+TextToHTML.pm
+sample.txt
+sample.foot
+txt2html.dict

@@ -1,0 +1,12 @@
+Revision history for Perl module HTML::TextToHTML.
+==================================================
+
+0.01  Sun 12th May 2002
+	- conversion of txt2html to a module
+	- made all global settings options (eg the location of the system
+link dictionary)
+	- added "outfile" option
+	- added use_mosaic_header option
+	- changed the dynamic code generation completely.
+	- removed the evil $* variable
+

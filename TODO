@@ -1,0 +1,18 @@
+TODO list for HTML::TextToHTML
+==============================
+
+- try to remove the need for getline(), but rather pass the lines in to
+  the methods, in order to:
+  - parse by-paragraph and then by-line (mucho rewrite)
+    in order to:
+    - implement the table-parsing from Gareth Rees's HTML::FromText module
+    - implement broader italics/underline/bold matching so that one could
+      for example, have an entire paragraph in italics, and it doesn't
+      matter if the asterisks are on different lines
+    - enable converting passed-in strings rather than just files
+- alter the "section" anchors so that they depend on the content of the header
+  (like the way it's done in HTML::GenToc)  This is useful if one happens
+  to have built a HTML file from more than one text file.
+- XHTML support
+- recognise and reproduce different Ordered List styles.
+- custom tags

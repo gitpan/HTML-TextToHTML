@@ -1,0 +1,36 @@
+HTML/TextToHTML version 0.01
+============================
+
+HTML::TextToHTML converts plain text files into HTML.  It is
+based on Seth Golub's txt2html script (see http://www.aigeek.com/txt2html)
+
+It supports headings, lists, simple character markup, and
+hyperlinking, and is highly customizable. It recognizes some of the
+apparent structure of the source document (mostly whitespace and
+typographic layout), and attempts to mark that structure explicitly
+using HTML. The purpose for this tool is to provide an easier way of
+converting existing text documents to HTML format.
+
+INSTALLATION
+
+To install this module type the following:
+
+   perl Makefile.PL
+   make
+   make test
+   make install
+
+DEPENDENCIES
+
+This module requires these other modules and libraries:
+
+    AppConfig
+    Pod::Usage
+    Data::Dumper
+
+COPYRIGHT AND LICENCE
+
+Original txt2html script copyright (C) 2000 Seth Golub <seth@aigeek.com>
+Copyright (C) 2002 Kathryn Andersen <rubykat@katspace.com>  All rights
+reserved.  This program is free software; you can redistribute it and/or
+modify it under the same terms as Perl itself.
