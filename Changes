@@ -1,6 +1,27 @@
 Revision history for Perl module HTML::TextToHTML.
 ==================================================
 
+1.10  Wed 18th December 2002
+	- removed all dependency on AppConfig
+	  * all of the existing options now must use their full names.
+	  * However, one now has the choice between passing options
+as a hash, or the old way, as a reference to an array.
+	- removed the do_help method; if you want the documentation
+of the module, use perldoc HTML::TextToHTML
+	- moved the texthyper script into this distribution
+	  * It now uses Getopt::Long and Getopt::ArgvFile.
+	  * The format of .texthyperrc has changed to conform with
+Getopt::ArgvFile rather than AppConfig.
+	  * Changed the version number so that it was bigger than
+either the script or the module so that both could have the same
+version number (that's why the big jump).
+	- the included system link dictionary (TextToHTML.dict)
+is now installed in /usr/share/txt2html as part of the install process.
+
+0.09  Wed 20th November 2002
+	- improved the XHTML mode, so that open paragraphs get closed
+sooner. This fixed a bug related to paragraphs inside lists.
+
 0.08  Wed 20th November 2002
 	- CPAN testers complained about a lack of explicitly stating
 all the dependencies of AppConfig, which either means that AppConfig
@@ -13,12 +34,13 @@ all its dependent modules, but, oh well.
 standalone, any open lists will be closed
 	- added --lower_case_tags option to force the tags to be output
 in lower-case
-	- first pass at XHTML conformance; added --xhtml option, which
+	- first pass at XHTML conformance; added --xhtml option.
+It isn't that pretty-looking, but the sample does pass the scrutiny of "tidy".
+When turned on it:
 	  * forces lower-case on
 	  * makes empty tags have the empty marker (eg <hr/>)
 	  * closes all open P and LI tags where they should be closed
 	  * table cell alignments are done as style attributes
-It isn't that pretty-looking, but the sample does pass the scrutiny of "tidy".
 
 0.06  Mon 2nd September 2002
 	- fine-tuned some of the links in the default links dictionary
@@ -62,7 +84,7 @@ things like italics which break over lines)
 and add a few things (like using double # for ##bold## text).
 
 0.01  Sun 12th May 2002
-	- conversion of txt2html to a module
+	- conversion of Seth Golub's txt2html to a module
 	- made all global settings options (eg the location of the system
 link dictionary)
 	- added "outfile" option

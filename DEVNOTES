@@ -1,0 +1,18 @@
+Developer Notes
+===============
+
+All new options need to be added in five places:
+- TextToHTML.pm init_our_args(), to initialize the default
+- TextToHTML.pm args() in the parse-the-array-ref part, unless
+  it is a simple option-with-a-value.  If it is a boolean option,
+  it also needs to be added in its "no" form.
+- TextToHTML.pm OPTIONS documentation
+- texthyper.PL Getopt call, including its type and possible shortnames
+- texthyper.PL OPTIONS documentation
+
+If you want to change the location or name of the system link dictionary,
+it needs to be changed in four places:
+- Makefile.PL
+- TextToHTML.pm init_our_args()
+- TextToHTML.pm OPTIONS documentation
+- texthyper.PL OPTIONS documentation

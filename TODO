@@ -1,6 +1,9 @@
 TODO list for HTML::TextToHTML
 ==============================
 
+- merge with txt2html
+- add option to process_para to make it not a para, but a fragment
+- add in an "obfustcate email addresses" facility
 - tables with borders
 - definition lists
 - recognise and reproduce different Ordered List styles.

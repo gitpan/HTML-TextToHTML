@@ -1,15 +1,18 @@
-HTML/TextToHTML version 0.08
+HTML/TextToHTML version 1.10
 ============================
 
 HTML::TextToHTML converts plain text files into HTML.  It is originally
 based on Seth Golub's txt2html script (see http://www.aigeek.com/txt2html)
+This module also includes a script, texthyper, which gives one
+a way of nicely using this module from the command-line.
 
 It supports headings, tables, lists, simple character markup, and
 hyperlinking, and is highly customizable. It recognizes some of the
 apparent structure of the source document (mostly whitespace and
 typographic layout), and attempts to mark that structure explicitly
 using HTML. The purpose for this tool is to provide an easier way of
-converting existing text documents to HTML format.
+converting existing text documents to HTML format, giving something
+nicer than just whapping the text in a PRE block.
 
 INSTALLATION
 
@@ -24,8 +27,11 @@ DEPENDENCIES
 
 This module requires these other modules and libraries:
 
-    AppConfig
+    ExtUtils::configPL
+    Getopt::Long
+    Getopt::ArgvFile
     Pod::Usage
+    File::Basename
 
 For debugging and testing, it also needs:
 

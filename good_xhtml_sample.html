@@ -3,31 +3,32 @@
 <html>
 <head>
 <title>HTML::TextToHTML Sample Conversion</title>
-<meta name="generator" content="HTML::TextToHTML v0.08"/>
+<meta name="generator" content="HTML::TextToHTML v1.10"/>
 </head>
 <body>
 <p><a href="http://www.katspace.com/tools/text_to_html/">HTML::TextToHTML</a> Sample Conversion
-
-</p><p>This sample is based hugely on the original sample.txt produced
+</p>
+<p>This sample is based hugely on the original sample.txt produced
 by <a href="http://www.aigeek.com/">Seth Golub</a> for <a href="http://www.aigeek.com/txt2html/">txt2html</a>.
-
-</p><p>I used the following options to convert this document:
-
-</p><pre>
-     -tf --mail --tables --heading '^ *--[\w\s]+-- *$'
-     --system_link_dict TextToHTML.dict --link section.dict
+</p>
+<p>I used the following options to convert this document:
+</p>
+<pre>
+     --titlefirst --mailmode --make_tables
+     --custom_heading_regexp '^ *--[\w\s]+-- *$'
+     --system_link_dict TextToHTML.dict
      --append_body sample.foot --infile sample.txt --outfile sample.html
 
 </pre>
 <p>This has either been done at the command line with:
-
-</p><p>        perl -MHTML::TextToHTML -e run_txt2html -- <em>options</em>
-
-</p><p>or using the script
-
-</p><p>        texthyper <em>options</em>
-
-</p><p>or from a (test) perl script with:
+</p>
+<p>        perl -MHTML::TextToHTML -e run_txt2html -- <em>options</em>
+</p>
+<p>or using the script
+</p>
+<p>        texthyper <em>options</em>
+</p>
+<p>or from a (test) perl script with:
         
 </p><pre>
         use HTML::TextToHTML;
@@ -46,50 +47,50 @@ From: <a href="mailto:bozo@clown.wustl.edu">bozo@clown.wustl.edu</a> (Bozo the C
 To: <a href="mailto:rubykat@katspace.com">rubykat@katspace.com</a> (<a href="http://www.katspace.com/">Kathryn Andersen</a>)<br/>
 Subject: Re: HTML::TextToHTML<br/>
 Date: Sun, 12 May 2002 10:01:10 -0500
-
-</p><p>Bozo wrote:<br/>
+</p>
+<p>Bozo wrote:<br/>
 BtC&gt; Can you post an example text file with its html'ed output?<br/>
 BtC&gt; That would provide a much better first glance at what it does<br/>
 BtC&gt; without having to look through and see what the perl code does.
-
-</p><p>Good idea.  I'll write something up.
-
-</p><hr/>
+</p>
+<p>Good idea.  I'll write something up.
+</p>
+<hr/>
 
 <p>The header lines were kept separate because they looked like mail
 headers and I have mailmode on.  The same thing applies to Bozo's
 quoted text.  Mailmode doesn't screw things up very often, but since
 most people are usually converting non-mail, it's off by default.
-
-</p><p>Paragraphs are handled ok.  In fact, this one is here just to
+</p>
+<p>Paragraphs are handled ok.  In fact, this one is here just to
 demonstrate that.
-
-</p><p><strong>THIS LINE IS VERY IMPORTANT!</strong><br/>
+</p>
+<p><strong>THIS LINE IS VERY IMPORTANT!</strong><br/>
 (Ok, it wasn't <em>that</em> important)
-
-</p><h1><a name="section-1.">EXAMPLE HEADER</a></h1>
+</p>
+<h1><a name="section-1.">EXAMPLE HEADER</a></h1>
  
 <p>Since this is the first header noticed (all caps, underlined with an
 "="), it will be a level 1 header.  It gets an anchor named
 "section-1".
-
-</p><h2><a name="section-1.1.">Another example</a></h2>
+</p>
+<h2><a name="section-1.1.">Another example</a></h2>
  <p>This is the second type of header (not all caps, underlined with "=").
 It gets an anchor named "section-1.1".
-
-</p><h2><a name="section-1.2.">Yet another example</a></h2>
+</p>
+<h2><a name="section-1.2.">Yet another example</a></h2>
  
 <p>This header was in the same style, so it was assigned the same header
 tag.  Note the anchor names in the HTML. (You probably can't see them
 in your current document view.)  Its anchor is named "section-1.2". 
 Get the picture?
-
-</p><h3><a name="section-1.2.1.">-- This is a custom header --</a></h3>
+</p>
+<h3><a name="section-1.2.1.">-- This is a custom header --</a></h3>
 
 <p>You can define your own custom header patterns if you know what your
 documents look like.
-
-</p><h2><a name="section-1.3.">Features of HTML::TextToHTML</a></h2>
+</p>
+<h2><a name="section-1.3.">Features of HTML::TextToHTML</a></h2>
  
 <ul>
   <li>Handles different kinds of lists
@@ -160,6 +161,9 @@ documents look like.
 
   </li><li>Now with Tables!  No need for fancy delimiters, this figures out
    tables by looking at the layout, the spacing of the cells.
+  </li><li>Now with XHTML!  Turn on the --xhtml option and it will ensure that
+   all paragraphs and list items have end-tags, all tags are in
+   lower-case, and the doctype is for XHTML.
 
 </li></ul>
 <h4><a name="section-1.3.1.1.">Example of short lines</a></h4>
@@ -170,8 +174,8 @@ We do routines and chorus scenes<br/>
 With footwork impeccable.<br/>
 We dine well here in Camelot<br/>
 We eat ham and jam and spam a lot.
-
-</p><h4><a name="section-1.3.1.2.">Example of varied formatting</a></h4>
+</p>
+<h4><a name="section-1.3.1.2.">Example of varied formatting</a></h4>
  
 <p>If I want to <em>emphasize</em> something, then I'd use stars to wrap
 around the words, <em>even if there were more than one</em>, <em>that's</em>
@@ -184,12 +188,12 @@ For another kind of emphasis, let's go and <strong>put something in bold</strong
 </p><p>   But it doesn't even need to be that simple. Something which is <em>really
 exciting</em> is coping with italics and similar things <em>spread across
 multiple lines</em>.
-
-</p><h4><a name="section-1.3.1.3.">Example of Long Preformatting</a></h4>
+</p>
+<h4><a name="section-1.3.1.3.">Example of Long Preformatting</a></h4>
  
 <p>(extract from Let It Rain by Kristen Hall)
-
-</p><pre>
+</p>
+<pre>
         I have given, I have given and got none
         Still I'm driven by something I can't explain
         It's not a cross, it is a choice
@@ -214,16 +218,16 @@ multiple lines</em>.
 <h4><a name="section-1.3.1.4.">Examples of Tables</a></h4>
  
 <p>Here is a simple table:
-
-</p><table summary="">
+</p>
+<table summary="">
 <tr><td>-e</td><td>File exists.
 </td></tr><tr><td>-z</td><td>File has zero size.
 </td></tr><tr><td>-s</td><td>File has nonzero size (returns size).
 </td></tr>
 </table>
 <p>Here are some of the conditions of tables:
-
-</p><table summary="">
+</p>
+<table summary="">
 <tr><td style="text-align: right;"><strong>Context:</strong></td><td>A table needs to be surrounded by blank lines.
 </td></tr><tr><td style="text-align: right;"><strong>Length:</strong></td><td>A table must contain at least two rows.
 </td></tr><tr><td style="text-align: right;"><strong>Width:</strong></td><td>A table must contain at least two columns.
@@ -236,8 +240,8 @@ multiple lines</em>.
 </td></tr>
 </table>
 <p>Here's a three-column table:
-
-</p><table summary="">
+</p>
+<table summary="">
 <tr><td>Fred</td><td>Armstrong</td><td>52
 </td></tr><tr><td>George</td><td>Ningie</td><td>64
 </td></tr><tr><td>Sam</td><td>Jones</td><td>47
@@ -247,8 +251,8 @@ multiple lines</em>.
  
 <p>There are some things which this module doesn't handle yet which
 I would like to implement.
-
-</p><ol>
+</p>
+<ol>
   <li>I would like to be able to preserve lettered lists, that is:
   <ol>
     <li>recognise that they are letters and not numbers (which it already
@@ -256,26 +260,23 @@ I would like to implement.
     </li><li>display the correct OL properties with CSS so as to preserve
       that information.
   </li></ol>
-  </li><li>Related to the above, I would like to use correct XHTML, not 3.2 HTML.
-  I am not sure if I would like it to be optional.
-
-</li></ol>
-<p>Perhaps it would be nice to have tables with borders,
+  </li><li>Perhaps it would be nice to have tables with borders,
 though I'm not sure how exactly to define them.
 
-</p><p>Definition lists would also be cool.
-
-</p><p>Fanfic:<br/>
+</li></ol>
+<p>Definition lists would also be cool.
+</p>
+<p>Fanfic:<br/>
   Fiction based on the universe of some movie or TV show.
 Fanzine:<br/>
   Amateur magazine produced by fans.
-
-</p><hr/>
+</p>
+<hr/>
 
 <p>The footer is everything from the end of this sentence to the
 &lt;/BODY&gt; tag.
-
 </p>
+
 <hr/>
 <address>
 <a href="http://www.katspace.com/">rubykat@katspace.com</a>

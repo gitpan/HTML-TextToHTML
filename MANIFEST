@@ -1,10 +1,13 @@
 Makefile.PL
 MANIFEST
+MANIFEST.SKIP
 README
 TODO
+DEVNOTES
 Changes
 test.pl
 TextToHTML.pm
+texthyper.PL
 sample.txt
 sample.foot
 sample.foot2

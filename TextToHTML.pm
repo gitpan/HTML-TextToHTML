@@ -9,12 +9,6 @@ HTML::TextToHTML - convert plain text file to HTML
 
   From the command line:
 
-    perl -MHTML::TextToHTML -e run_txt2html -- --help;
-    (prints this synopsis)
-
-    perl -MHTML::TextToHTML -e run_txt2html -- --man;
-    (prints this manpage)
-
     perl -MHTML::TextToHTML -e run_txt2html -- I<arguments>;
     (calls the txt2html method with the given arguments)
 
@@ -26,11 +20,14 @@ HTML::TextToHTML - convert plain text file to HTML
     my $conv = new HTML::TextToHTML();
 
     # convert a file
-    $conv->txt2html(["--file", $text_file,
-                     "--outfile", $html_file,
-		     "--title", "Wonderful Things",
-			 "--mail"
+    $conv->txt2html(infile=>[$text_file],
+                     outfile=>$html_file,
+		     title=>"Wonderful Things",
+		     mail=>1,
       ]);
+
+    # reset arguments
+    $conv->args(infile=>[], mail=>0);
 
     # convert a string
     $newstring = $conv->process_para($mystring)
@@ -52,10 +49,8 @@ There are two ways to use this module:
 
 The first usage requires one to create a HTML::TextToHTML object, and
 then call the txt2html or process_para method with suitable arguments.
-Because this object is a subclass of AppConfig, one can use all the
-power of AppConfig for defining and parsing options/arguments.  One can
-also pass arguments in when creating the object, or call the args method
-to pass arguments in.
+One can also pass arguments in when creating the object, or call the
+args method to pass arguments in.
 
 The second usage allows one to pass arguments in from the command line, by
 calling perl and executing the module, and calling run_txt2html which
@@ -80,23 +75,40 @@ them to the object, and runs the txt2html method.  It takes no arguments.
 
 =head1 OPTIONS
 
-=head2 A Note about Options
+All arguments can be set when the object is created, and further options
+can be set when calling the actual txt2html method. Arguments
+to methods can take either a hash of arguments, or a reference to an
+array (which will then be processed as if it were a command-line, which
+makes this easy to use from scripts even if you don't wish to use
+the commonly used Getopt::Long module in your script).
 
-Options can start with '--' or '-'.  If it is a yes/no option, that is the
-only part of the option (and such an option can be prefaced with "no" to
-negate it).  If the option takes a value, then the list must be
-("--option", "value").
+Note that all option-names must match exactly -- no abbreviations are
+allowed.
 
-Order does matter.  For options which are yes/no options, a later
-argument overrides an earlier one.  For arguments which are single values,
-a later value replaces an earlier one.  For arguments which are
-cumulative, a later argument is added on to the list.  For such arguments,
-if you want to clear the old value and start afresh, give it the
-special value of CLEAR.
+The arguments get treated differently depending on whether they are
+given in a hash or a reference to an array.  When the arguments are
+in a hash, the argument-keys are expected to have values matching
+those required for that argument -- whether that be a boolean, a string,
+a reference to an array or a reference to a hash.  These will replace
+any value for that argument that might have been there before.
+
+When the arguments are in a reference to an array, it is treated
+somewhat as if it were a command-line: option names are expected to
+start with '--' or '-', boolean options are set to true as soon as the
+option is given (no value is expected to follow),  boolean options with
+the word "no" prepended set the option to false, string options are
+expected to have a string value following, and those options which are
+internally arrays or hashes are treated as cumulative; that is, the
+value following the --option is added to the current set for that
+option,  to add more, one just repeats the --option with the next value,
+and in order to reset that option to empty, the special value of "CLEAR"
+must be added to the list.
 
 =over 8
 
-=item --append_file I<filename> | --append I<filename> | --append_body I<filename>
+=item append_file
+
+    append_file=>I<filename>
 
 If you want something appended by default, put the filename here.
 The appended text will not be processed at all, so make sure it's
@@ -107,7 +119,9 @@ but instead, have:
 
 (default: nothing)
 
-=item --append_head I<filename> | -ah I<filename>
+=item append_head
+
+    append_head=>I<filename>
 
 If you want something appended to the head by default, put the filename here.
 The appended text will not be processed at all, so make sure it's
@@ -118,18 +132,16 @@ but instead, have:
 
 (default: nothing)
 
-=item --caps_tag I<tag> | --capstag I<tag> | -ct I<tag>
+=item caps_tag
+
+    caps_tag=>I<tag>
 
 Tag to put around all-caps lines
 (default: STRONG)
 
-=item --config I<file>
+=item custom_heading_regexp
 
-A file containing options, which is read in, and the options from the file
-are treated as if they were in the argument list at the point at which the
---config option was.  See L<Config File> for more information.
-
-=item --custom_heading_regexp I<regexp> | --heading I<regexp> | -H I<regexp>
+    custom_heading_regexp=>I<regexp>
 
 Add a regexp for headings.  Header levels are assigned by regexp
 in order seen When a line matches a custom header regexp, it is tagged as
@@ -154,18 +166,24 @@ This is a multi-valued option.
 
 (default: none)
 
-=item --debug
+=item debug
+    
+    debug=>1
 
 Enable copious script debugging output (don't bother, this is for the
-developer)
+developer) (default: false)
 
-=item --default_link_dict I<filename>
+=item default_link_dict
+
+    default_link_dict=>I<filename>
 
 The name of the default "user" link dictionary.
 (default: "$ENV{'HOME'}/.txt2html.dict" -- this is the same as for
 the txt2html script)
 
-=item --dict_debug I<n> | -db I<n>
+=item dict_debug
+
+    dict_debug=>I<n>
 
 Debug mode for link dictionaries Bitwise-Or what you want to see:
           1: The parsing of the dictionary
@@ -175,24 +193,32 @@ Debug mode for link dictionaries Bitwise-Or what you want to see:
 
 (default: 0)
 
-=item --doctype I<doctype> | --dt I<doctype>
+=item doctype
+
+    doctype=>I<doctype>
 
 This gets put in the DOCTYPE field at the top of the document, unless it's
 empty.  (default : "-//W3C//DTD HTML 3.2 Final//EN")
 If --xhtml is true, the contents of this is ignored, unless it's
 empty, in which case no DOCTYPE declaration is output.
 
-=item --eight_bit_clean | --eight_bit
+=item eight_bit_clean
+
+    eight_bit_clean=>1
 
 disable Latin-1 character entity naming
 (default: false)
 
-=item --escape_HTML_chars | --escape_chars | -ec
+=item escape_HTML_chars
+
+    escape_HTML_chars=>1
 
 turn & E<lt> E<gt> into &amp; &gt; &lt;
 (default: true)
 
-=item --explicit_headings | -EH
+=item explicit_headings
+
+    explicit_headings=>1
 
 Don't try to find any headings except the ones specified in the
 --custom_heading_regexp option.
@@ -201,24 +227,32 @@ are encountered in the document, but in the order they are specified on
 the command line.
 (default: false)
 
-=item --extract
+=item extract
+
+    extract=>1
 
 Extract Mode; don't put HTML headers or footers on the result, just
 the plain HTML (thus making the result suitable for inserting into
 another document (or as part of the output of a CGI script).
 (default: false)
 
-=item --hrule_min I<n> | --hrule I<n> | -r I<n>
+=item hrule_min
+
+    hrule_min=>I<n>
 
 Min number of ---s for an HRule.
 (default: 4)
 
-=item --indent_width I<n> | --indent I<n> | -iw I<n>
+=item indent_width
+
+    indent_width=>I<n>
 
 Indents this many spaces for each level of a list.
 (default: 2)
 
-=item --indent_par_break | -ipb
+=item indent_par_break
+
+    indent_par_break=>1
 
 Treat paragraphs marked solely by indents as breaks with indents.
 That is, instead of taking a three-space indent as a new paragraph,
@@ -226,22 +260,37 @@ put in a <BR> and three non-breaking spaces instead.
 (see also --preserve_indent)
 (default: false)
 
-=item --infile I<filename> | --file I<filename>
+=item infile
 
-The name of the input file.
-This is a cumulative list argument.  If you want to process more than
-one file, just add another --file I<file> to the list of arguments.  If
-you want to process a different file, you need to CLEAR this argument
-first.
+    infile=>\@my_files
+    infile=>['chapter1.txt', 'chapter2.txt']
+    "--infile", "chapter1.txt", "--infile", "chapter2.txt"
+
+The name of the input file(s).  When the arguments are given as a hash,
+this expects a reference to an array of filenames.  When the arguments
+are given as a reference to an array, then the "--infile" option must
+be repeated for each new file added to the list.  If you want to reset
+the list to be empty, give the special value of "CLEAR".
+
 (default:undefined)
 
-=item --links_dictionaries I<filename> | --link I<filename> | -l I<filename>
+=item links_dictionaries
 
-File to use as a link-dictionary.  There can be more than one of these.
-These are in addition to the System Link Dictionary and the User Link
-Dictionary.
+    links_dictionaries=>\@my_link_dicts
+    links_dictionaries=>['url_links.dict', 'format_links.dict']
+    "--links_dictionaries", "url_links.dict", "--links_dictionaries", "format_links.dict"
 
-=item --link_only | --linkonly | -LO
+File(s) to use as a link-dictionary.  There can be more than one of
+these.  These are in addition to the System Link Dictionary and the User
+Link Dictionary.  When the arguments are given as a hash, this expects a
+reference to an array of filenames.  When the arguments are given as a
+reference to an array, then the "--links_dictionaries" option must be
+repeated for each new file added to the list.  If you want to reset the
+list to be empty, give the special value of "CLEAR".
+
+=item link_only
+
+    link_only=>1
 
 Do no escaping or marking up at all, except for processing the links
 dictionary file and applying it.  This is useful if you want to use
@@ -250,47 +299,35 @@ complete document (includes HTML,HEAD,BODY tags, etc) then you'll
 probably want to use the --extract option also.
 (default: false)
 
-=item --mailmode | --mail | -m
+=item mailmode
+
+    mailmode=>1
 
 Deal with mail headers & quoted text
 (default: false)
 
-=item --make_anchors | --anchors
+=item make_anchors
+
+    make_anchors=>0
 
 Should we try to make anchors in headings?
 (default: true)
 
-=item --make_links
+=item make_links
 
-Should we try to build links?
-(default: true)
+    make_links=>0
 
-=item --make_tables | --tables
+Should we try to build links?  If this is false, then the links
+dictionaries are not consulted and only structural text-to-HTML
+conversion is done.  (default: true)
 
-Should we try to build tables?
+=item make_tables
 
-If true, spots tables and marks them up appropriately.  A table must be
-marked as a separate paragraph, that is, it must be surrounded by blank
-lines.  Columns must be separated by two or more spaces (this prevents
-accidental incorrect recognition of a paragraph where interword spaces
-happen to line up).  If there are two or more rows in a paragraph and
-all rows share the same set of (two or more) columns, the paragraph is
-assumed to be a table.  For example
+    make_tables=>1
 
-    -e  File exists.
-    -z  File has zero size.
-    -s  File has nonzero size (returns size).
-
-becomes
-
-    <TABLE>
-    <TR><TD>-e</TD><TD>File exists.</TD></TR>
-    <TR><TD>-z</TD><TD>File has zero size.</TD></TR>
-    <TR><TD>-s</TD><TD>File has nonzero size (returns size).</TD></TR>
-    </TABLE>
-
-This guesses for each column whether it is intended to be left,
-centre or right aligned.
+Should we try to build tables?  If true, spots tables and marks them up
+appropriately.  See L<Input File Format> for information on how tables
+should be formatted.
 
 This overrides the detection of lists; if something looks like a table,
 it is taken as a table, and list-checking is not done for that
@@ -298,25 +335,33 @@ paragraph.
 
 (default: false)
 
-=item --min_caps_length I<n> | --caps I<n> | -c I<n>
+=item min_caps_length
+
+    min_caps_length=>I<n>
 
 min sequential CAPS for an all-caps line
 (default: 3)
 
-=item --outfile I<filename>
+=item outfile
+
+    outfile=>I<filename>
 
 The name of the output file.  If it is "-" then the output goes
 to Standard Output.
 (default: - )
 
-=item --par_indent I<n>
+=item par_indent
+
+    par_indent=>I<n>
 
 Minumum number of spaces indented in first lines of paragraphs.
   Only used when there's no blank line
 preceding the new paragraph.
 (default: 2)
 
-=item --preformat_trigger_lines I<n> | --prebegin I<n> | -pb I<n>
+=item preformat_trigger_lines
+
+    preformat_trigger_lines=>I<n>
 
 How many lines of preformatted-looking text are needed to switch to <PRE>
           <= 0 : Preformat entire document
@@ -325,7 +370,9 @@ How many lines of preformatted-looking text are needed to switch to <PRE>
 
 (default: 2)
 
-=item --endpreformat_trigger_lines I<n> | --preend I<n> | -pe I<n>
+=item endpreformat_trigger_lines
+
+    endpreformat_trigger_lines=>I<n>
 
 How many lines of unpreformatted-looking text are needed to switch from <PRE>
            <= 0 : Never preformat within document
@@ -333,25 +380,31 @@ How many lines of unpreformatted-looking text are needed to switch from <PRE>
            >= 2 : two lines trigger
 (default: 2)
 
-NOTE for --prebegin and --preend:
+NOTE for preformat_trigger_lines and endpreformat_trigger_lines:
 A zero takes precedence.  If one is zero, the other is ignored.
 If both are zero, entire document is preformatted.
 
-=item --preformat_start_marker I<regexp>
+=item preformat_start_marker
+
+    preformat_start_marker=>I<regexp>
 
 What flags the start of a preformatted section if --use_preformat_marker
 is true.
 
 (default: "^(:?(:?&lt;)|<)PRE(:?(:?&gt;)|>)\$")
 
-=item --preformat_end_marker I<regexp>
+=item preformat_end_marker
+
+    preformat_end_marker=>I<regexp>
 
 What flags the end of a preformatted section if --use_preformat_marker
 is true.
 
 (default: "^(:?(:?&lt;)|<)/PRE(:?(:?&gt;)|>)\$")
 
-=item --preformat_whitespace_min I<n> | --prewhite I<n> | -p I<n>
+=item preformat_whitespace_min
+
+    preformat_whitespace_min=>I<n>
 
 Minimum number of consecutive whitespace characters to trigger
 normal preformatting. 
@@ -360,7 +413,9 @@ That means if B<tab_width> is 8 and this is 5, then one tab may be
 expanded to 8 spaces, which is enough to trigger preformatting.
 (default: 5)
 
-=item --prepend_file I<filename> | --prepend_body I<filename> | --pp I<filename>
+=item prepend_file
+
+    prepend_file=>I<filename>
 
 If you want something prepended to the processed body text, put the
 filename here.  The prepended text will not be processed at all, so make
@@ -368,55 +423,73 @@ sure it's plain text or decent HTML.
 
 (default: nothing)
 
-=item --preserve_indent | -pi
+=item preserve_indent
+
+    preserve_indent=>1
 
 Preserve the first-line indentation of paragraphs marked with indents
 by replacing the spaces of the first line with non-breaking spaces.
 (default: false)
 
+=item short_line_length
 
-=item --short_line_length I<n> | --shortline I<n> | -s I<n>
+    short_line_length=>I<n>
 
 Lines this short (or shorter) must be intentionally broken and are kept
 that short.
 (default: 40)
 
-=item --system_link_dict I<filename>
+=item system_link_dict
+
+    system_link_dict=>I<filename>
 
 The name of the default "system" link dictionary.
-(default: "/usr/share/txt2html/txt2html.dict" -- this is the same as for
-the txt2html script)
+(default: "/usr/share/txt2html/TextToHTML.dict")
 
-=item --tab_width I<n> | --tabwidth I<n> | -tw I<n>
+=item tab_width
+
+    tab_width=>I<n>
 
 How many spaces equal a tab?
 (default: 8)
 
-=item --title I<title> | -t I<title>
+=item title
+
+    title=>I<title>
 
 You can specify a title.  Otherwise it will use a blank one.
 (default: nothing)
 
-=item --titlefirst | -tf
+=item titlefirst
+
+    titlefirst=>1
 
 Use the first non-blank line as the title.
 
-=item --underline_length_tolerance I<n> | --ulength I<n> | -ul I<n>
+=item underline_length_tolerance
+
+    underline_length_tolerance=>I<n>
 
 How much longer or shorter can underlines be and still be underlines?
 (default: 1)
 
-=item --underline_offset_tolerance I<n> | --uoffset I<n> | -uo I<n>
+=item underline_offset_tolerance
+
+    underline_offset_tolerance=>I<n>
 
 How far offset can underlines be and still be underlines?
 (default: 1)
 
-=item --unhyphenation | --unhypnenate | -u
+=item unhyphenation
+
+    unhyphenation=>0
 
 Enables unhyphenation of text.
 (default: true)
 
-=item --use_mosaic_header | --mosaic | -mh
+=item use_mosaic_header
+
+    use_mosaic_header=>1
 
 Use this option if you want to force the heading styles to match what Mosaic
 outputs.  (Underlined with "***"s is H1,
@@ -425,14 +498,18 @@ and with "..." is H6)
 This was the behavior of txt2html up to version 1.10.
 (default: false)
 
-=item --use_preformat_marker | --preformat_marker | -pm
+=item use_preformat_marker
+
+    use_preformat_marker=>1
 
 Turn on preformatting when encountering
 "<PRE>" on a line by itself, and turn it
 off when there's a line containing only "</PRE>".
 (default: off)
 
-=item --xhtml
+=item xhtml
+
+    xhtml=>1
 
 Try to make the output conform to the XHTML standard, including
 closing all open tags and marking empty tags correctly.  This
@@ -442,6 +519,8 @@ to make it conform; the header/footer isn't touched by this.
 Likewise, if you make link-dictionary entries that break XHTML,
 then this won't fix them, except to the degree of putting all tags
 into lower-case.
+
+=back 8
 
 =head1 METHODS
 
@@ -457,11 +536,9 @@ require Exporter;
 use vars qw($VERSION $PROG @ISA @EXPORT @EXPORT_OK %EXPORT_TAGS);
 
 BEGIN {
-    @ISA = qw(Exporter AppConfig);
+    @ISA = qw(Exporter);
     require Exporter;
-    use AppConfig qw(:argcount);
     use Data::Dumper;
-    use Pod::Usage;
 }
 
 # Items to export into callers namespace by default. Note: do not export
@@ -485,7 +562,7 @@ BEGIN {
   run_txt2html
 );
 $PROG = 'HTML::TextToHTML';
-$VERSION = '0.08';
+$VERSION = '1.10';
 
 #------------------------------------------------------------------------
 use constant TEXT_TO_HTML => "TEXT_TO_HTML";
@@ -589,141 +666,195 @@ use vars qw(@alignments @lc_alignments @xhtml_alignments);
 
 =head2 new
 
-$conv = new HTML::TextToHTML(\@args)
+    $conv = new HTML::TextToHTML()
 
-Create a new object with new.  It has an optional argument of a reference
-to an array -- this contains the arguments/options to customize the
-conversion.  See L<OPTIONS> for the possible arguments.
+    $conv = new HTML::TextToHTML(\@args)
+
+    $conv = new HTML::TextToHTML(titlefirst=>1,
+	...
+    );
+
+Create a new object with new.  If one argument is given, it is assumed
+to be a reference to an array of arguments.  If more than one argument
+is given, it is assumed to be a hash of arguments.  These arguments will
+be used in invocations of other methods.
+
+See L<OPTIONS> for the possible values of the arguments.
 
 =cut
 
 sub new {
     my $invocant = shift;
-    my $args_ref = (@_ ? shift: 0);
+    my $self = {};
 
     my $class = ref($invocant) || $invocant;    # Object or class name
-    my $self = AppConfig->new(
-        {
-            CASE   => 1,
-            CREATE => 0,
-            GLOBAL => {
-                ARGCOUNT => ARGCOUNT_NONE,
-                EXPAND   => AppConfig::EXPAND_ALL,
-                ACTION   => \&do_var_action,
-            }
-        }
-    );
-
     init_our_data($self);
 
-    # re-bless self
+    # bless self
     bless($self, $class);
 
-    # and set with the passed-in args
-    if ($args_ref && @{$args_ref}) {
-        if (!$self->args($args_ref)) {
-            print STDERR "Unrecognised option, try --help\n";
-            return 0;
-        }
-    }
+    $self->args(@_);
 
     return $self;
 }    # new
 
 =head2 args
 
-$conv->args(\@args)
+    $conv->args(\@args)
 
-$conv->args(["--infile", "CLEAR"]);
+    $conv->args(short_line_length=>60,
+	titlefirst=>1,
+	....
+    );
 
-Updates the current arguments/options of the HTML::GenToc object.
-Takes a reference to an array of arguments, which will be used
-in invocations of other methods.  See L<OPTIONS> for the possible
-values of the arguments.
+Updates the current arguments/options of the HTML::TextToHTML object.
+Takes either a hash, or a reference to an array of arguments, which will
+be used in invocations of other methods.
+See L<OPTIONS> for the possible values of the arguments.
 
 =cut
 
 sub args {
     my $self     = shift;
-    my $args_ref = (@_ ? shift: 0);
+    my %args = ();
+    my @arg_array = ();
+    if (@_ && @_ == 1)
+    {
+	# assume this is a reference to an array -- use the old style args
+	my $aref = shift;
+	@arg_array = @{$aref};
+    }
+    elsif (@_)
+    {
+	%args = @_;
+    }
 
-    # and set with the passed-in args
-    if ($args_ref && @{$args_ref}) {
-        if (!$self->SUPER::args($args_ref)) {
-            print STDERR "Unrecognised option, try --help\n";
-            exit(1);
-        }
+    if (%args) {
+	if ($self->{debug}) {
+	    print STDERR "========args(hash)========\n";
+	    print STDERR Dumper(%args);
+	}
+	foreach my $arg (keys %args) {
+	    if (defined $args{$arg}) {
+		if ($arg =~ /^-/) {
+		    $arg =~ s/^-//; # get rid of first dash
+		    $arg =~ s/^-//; # get rid of possible second dash
+		}
+		if ($self->{debug}) {
+		    print STDERR "--", $arg;
+		}
+		$self->{$arg} = $args{$arg};
+		if ($self->{debug}) {
+		    print STDERR " ", $args{$arg}, "\n";
+		}
+	    }
+	}
+    } elsif (@arg_array) {
+	if ($self->{debug}) {
+	    print STDERR "========args(array)========\n";
+	    print STDERR Dumper(@arg_array);
+	}
+	# the arg array may have filenames at the end of it,
+	# so don't consume them
+	my $look_at_args = 1;
+	while (@arg_array && $look_at_args) {
+	    my $arg = shift @arg_array;
+	    # check for arguments which are bools,
+	    # and thus have no companion value
+	    if ($arg =~ /^-/) {
+		$arg =~ s/^-//; # get rid of first dash
+		$arg =~ s/^-//; # get rid of possible second dash
+		if ($self->{debug}) {
+		    print STDERR "--", $arg;
+		}
+		if ($arg eq 'debug'
+		    || $arg eq 'eight_bit_clean'
+		    || $arg eq 'escape_HTML_chars'
+		    || $arg eq 'explicit_headings'
+		    || $arg eq 'extract'
+		    || $arg eq 'link_only'
+		    || $arg eq 'lower_case_tags'
+		    || $arg eq 'mailmode'
+		    || $arg eq 'make_anchors'
+		    || $arg eq 'make_links'
+		    || $arg eq 'make_tables'
+		    || $arg eq 'preserve_indent'
+		    || $arg eq 'titlefirst'
+		    || $arg eq 'unhyphenation'
+		    || $arg eq 'use_mosaic_header'
+		    || $arg eq 'use_preformat_marker'
+		    || $arg eq 'verbose'
+		    || $arg eq 'xhtml'
+		) {
+		    $self->{$arg} = 1;
+		    if ($self->{debug}) {
+			print STDERR "=true\n";
+		    }
+		} elsif ($arg eq 'nodebug'
+		    || $arg eq 'noeight_bit_clean'
+		    || $arg eq 'noescape_HTML_chars'
+		    || $arg eq 'noexplicit_headings'
+		    || $arg eq 'noextract'
+		    || $arg eq 'nolink_only'
+		    || $arg eq 'nolower_case_tags'
+		    || $arg eq 'nomailmode'
+		    || $arg eq 'nomake_anchors'
+		    || $arg eq 'nomake_links'
+		    || $arg eq 'nomake_tables'
+		    || $arg eq 'nopreserve_indent'
+		    || $arg eq 'notitlefirst'
+		    || $arg eq 'nounhyphenation'
+		    || $arg eq 'nouse_mosaic_header'
+		    || $arg eq 'nouse_preformat_marker'
+		    || $arg eq 'noverbose'
+		    || $arg eq 'noxhtml'
+		) {
+		    $arg =~ s/^no//;
+		    $self->{$arg} = 0;
+		    if ($self->{debug}) {
+			print STDERR " $arg=false\n";
+		    }
+		} else {
+		    my $val = shift @arg_array;
+		    if ($self->{debug}) {
+			print STDERR "=", $val, "\n";
+		    }
+		    # check the types
+		    if (defined $arg && defined $val) {
+			if ($arg eq 'infile' 
+			    || $arg eq 'custom_heading_regexp'
+			    || $arg eq 'links_dictionaries'
+			) {	# arrays
+			    if ($val eq 'CLEAR') {
+				$self->{$arg} = [];
+			    } else {
+				push @{$self->{$arg}}, $val;
+			    }
+			} elsif ($arg eq 'file') {	# alternate for 'infile'
+			    if ($val eq 'CLEAR') {
+				$self->{infile} = [];
+			    } else {
+				push @{$self->{infile}}, $val;
+			    }
+			} else {
+			    $self->{$arg} = $val;
+			}
+		    }
+		}
+	    } else {
+		# if an option don't start with - then we've
+		# come to the end of the options
+		$look_at_args = 0;
+	    }
+	}
+    }
+    if ($self->{debug})
+    {
+    	print STDERR Dumper($self);
     }
 
     return 1;
 }    # args
-
-=head2 do_help
-
-$conv->do_help();
-
-Output the default help or manpage message (and exit) if the --help or
---manpage options are set.  This is explicitly called inside
-I<txt2html> and I<run_txt2html>, so you only need to call this
-if you wish to trigger the help action without having called those
-methods.
-
-If --manpage is true, this displays all the PoD documentation
-of the calling program.  Otherwise, if --help is true, then this
-displays the SYNOPSIS information from the PoD documentation
-of the calling program.
-
-=cut
-
-sub do_help ($) {
-    my $self = shift;
-
-    if ($self->man_help()) {
-        if (-f "$0") {
-            pod2usage(
-                {
-                    -message => "$0",
-                    -exitval => 0,
-                    -verbose => 2,
-                }
-            );
-        }
-        else {
-            pod2usage(
-                {
-                    -message  => "HTML::TextToHTML",
-                    -exitval  => 0,
-                    -verbose  => 2,
-                    -input    => "HTML/TextToHTML.pm",
-                    -pathlist => \@INC,
-                }
-            );
-        }
-    }
-    if ($self->help()) {
-        if (-f "$0") {
-            pod2usage(
-                {
-                    -message => "$0",
-                    -exitval => 0,
-                    -verbose => 0,
-                }
-            );
-        }
-        else {
-            pod2usage(
-                {
-                    -message  => "HTML::TextToHTML",
-                    -exitval  => 0,
-                    -verbose  => 0,
-                    -input    => "HTML/TextToHTML.pm",
-                    -pathlist => \@INC,
-                }
-            );
-        }
-    }
-
-}
 
 =head2 process_para
 
@@ -735,11 +866,11 @@ want to pass arguments to alter the behaviour of this conversion, you need
 to do that earlier, either when you create the object, or with the L<args>
 method.
 
-$newstring = $conv->process_para($mystring,
+    $newstring = $conv->process_para($mystring,
 			    close_tags=>0)
 
 If there are open tags (such as lists) in the input string, process_para will
-now automatically close them, unless you specify not to, with the close_lists
+now automatically close them, unless you specify not to, with the close_tags
 option.
 
 =cut
@@ -760,7 +891,7 @@ sub process_para ($$;%) {
     if ($self->{__mode} & $TABLE) {
         $self->{__mode} ^= $TABLE;
     }
-    if (!$self->link_only()) {
+    if (!$self->{link_only}) {
 
         my $para_len         = length($para);
         my @para_lines       = split (/^/, $para);
@@ -789,7 +920,7 @@ sub process_para ($$;%) {
         }
 
         # do the table stuff on the array of lines
-        if ($self->make_tables()) {
+        if ($self->{make_tables}) {
             $self->tablestuff(\@para_lines, $para_len);
         }
 
@@ -824,11 +955,11 @@ sub process_para ($$;%) {
             # Don't escape HTML chars if we're in a table, because
             # it's already been done in tablestuff above
             # and we don't actually want to escape the table code!
-            if ($self->escape_HTML_chars() && !($self->{__mode} & $TABLE)) {
+            if ($self->{escape_HTML_chars} && !($self->{__mode} & $TABLE)) {
                 $para_lines[$i] = escape($para_lines[$i]);
             }
             if (($self->{__mode} & $PRE)
-                && ($self->preformat_trigger_lines() != 0))
+                && ($self->{preformat_trigger_lines} != 0))
             {
                 $self->endpreformat(\$self->{__mode},
 		    \@para_lines, \@para_line_action, $i, $prev_ref);
@@ -836,7 +967,7 @@ sub process_para ($$;%) {
             if (!($self->{__mode} & $PRE)) {
                 $self->hrule(\@para_lines, \@para_line_action, $i);
             }
-            if (@{$self->custom_heading_regexp()} && !($self->{__mode} & $PRE))
+            if (@{$self->{custom_heading_regexp}} && !($self->{__mode} & $PRE))
             {
                 $self->custom_heading(\@para_lines, \@para_line_action, $i);
             }
@@ -847,14 +978,14 @@ sub process_para ($$;%) {
                     \@para_lines,       \@para_line_action,
                     \@para_line_indent, $i, $prev_ref);
             }
-            if (!$self->explicit_headings()
+            if (!$self->{explicit_headings}
                 && !($self->{__mode} & ($PRE | $HEADER | $TABLE))
                 && ${$next_ref} =~ /^\s*[=\-\*\.~\+]+\s*$/)
             {
                 $self->heading(\$para_lines[$i], \$para_line_action[$i],
                     $next_ref);
             }
-            if ($self->mailmode()
+            if ($self->{mailmode}
                 && !($self->{__mode} & ($PRE | $TABLE))
                 && !($para_line_action[$i] & $HEADER))
             {
@@ -911,7 +1042,18 @@ sub process_para ($$;%) {
         # now put the para back together as one string
         $para = join ("", @para_lines);
 
-        if ($self->unhyphenation()
+	# if this is a paragraph, and we are in XHTML mode,
+	# close an open paragraph.
+	if ($self->{xhtml})
+	{
+	    my $open_tag = @{$self->{__tags}}[$#{$self->{__tags}}];
+	    if ($open_tag eq 'P')
+	    {
+		$para .= $self->close_tag('P');
+	    }
+	}
+
+        if ($self->{unhyphenation}
 
             # ends in hyphen & next line starts w/letters
             && ($para =~ /[^\W\d_]\-\n\s*[^\W\d_]/s)
@@ -924,7 +1066,7 @@ sub process_para ($$;%) {
 
     }
 
-    if ($self->make_links()
+    if ($self->{make_links}
         && !is_blank($para)
         && @{$self->{__links_table_order}})
     {
@@ -939,7 +1081,7 @@ sub process_para ($$;%) {
 			\$para, \$para_action);
     }
     # close any open tags
-    if ($args{close_tags} && $self->xhtml())
+    if ($args{close_tags} && $self->{xhtml})
     {
 	while (@{$self->{__tags}})
 	{
@@ -949,7 +1091,7 @@ sub process_para ($$;%) {
 
     # All the matching and formatting is done.  Now we can 
     # replace non-ASCII characters with character entities.
-    if (!$self->eight_bit_clean()) {
+    if (!$self->{eight_bit_clean}) {
         my @chars = split (//, $para);
         foreach $_ (@chars) {
             $_ = $char_entities{$_} if defined($char_entities{$_});
@@ -965,29 +1107,23 @@ sub process_para ($$;%) {
 
 =head2 txt2html
 
-    $conv->txt2html(\@args)
+    $conv->txt2html(\@args);
 
-Convert a text file to HTML.  Takes a reference to an array of arguments to
-customize the conversion; (this includes saying what file to convert!) See
-L<OPTIONS> for the possible values of the arguments.  Arguments which
-have already been set with B<new> or B<args> will remain as they are,
-unless they are overridden.
+    $conv->txt2html(%args);
+
+Convert a text file to HTML.  Takes a hash of arguments, or a reference
+to an array of arguments to customize the conversion; (this includes
+saying what file to convert!) See L<OPTIONS> for the possible values of
+the arguments.  Arguments which have already been set with B<new> or
+B<args> will remain as they are, unless they are overridden.
 
 =cut
 sub txt2html ($;$) {
     my $self     = shift;
-    my $args_ref = (@_ ? shift: 0);
 
-    # and set with the passed-in args
-    if ($args_ref && @{$args_ref}) {
-        if (!$self->args($args_ref)) {
-            print STDERR "Unrecognised option, try --help\n";
-            exit(1);
-        }
+    if (@_) {
+	$self->args(@_);
     }
-
-    # check for help messages
-    $self->do_help();
 
     $self->do_init_call();
 
@@ -995,13 +1131,13 @@ sub txt2html ($;$) {
     my $not_to_stdout;
 
     # open the output
-    if ($self->outfile() eq "-") {
+    if ($self->{outfile} eq "-") {
         $outhandle     = *STDOUT;
         $not_to_stdout = 0;
     }
     else {
-        open(HOUT, "> " . $self->outfile()) || die "Error: unable to open ",
-          $self->outfile(), ": $!\n";
+        open(HOUT, "> " . $self->{outfile}) || die "Error: unable to open ",
+          $self->{outfile}, ": $!\n";
         $outhandle     = *HOUT;
         $not_to_stdout = 1;
     }
@@ -1011,7 +1147,7 @@ sub txt2html ($;$) {
     local $/ = "";
     my $para  = '';
     my $count = 0;
-    foreach my $file (@{$self->infile()}) {
+    foreach my $file (@{$self->{infile}}) {
         if (-f $file && open(IN, $file)) {
             while (<IN>) {
                 $para = $_;
@@ -1035,7 +1171,7 @@ sub txt2html ($;$) {
 			\$self->{__prev}, \$self->{__line_action})
     }
     print $outhandle $self->{__prev};
-    if ($self->xhtml())
+    if ($self->{xhtml})
     {
 	# close any open tags (until we get to the body)
 	my $open_tag = @{$self->{__tags}}[$#{$self->{__tags}}];
@@ -1049,21 +1185,21 @@ sub txt2html ($;$) {
 	print $outhandle "\n";
     }
 
-    if ($self->append_file()) {
-        if (-r $self->append_file()) {
-            open(APPEND, $self->append_file());
+    if ($self->{append_file}) {
+        if (-r $self->{append_file}) {
+            open(APPEND, $self->{append_file});
             while (<APPEND>) {
                 print $outhandle $_;
             }
             close(APPEND);
         }
         else {
-            print STDERR "Can't find or read file ", $self->append_file(),
+            print STDERR "Can't find or read file ", $self->{append_file},
               " to append.\n";
         }
     }
 
-    if (!$self->extract()) {
+    if (!$self->{extract}) {
         print $outhandle $self->get_tag('BODY', tag_type=>'end'), "\n";
         print $outhandle $self->get_tag('HTML', tag_type=>'end'), "\n";
     }
@@ -1074,331 +1210,7 @@ sub txt2html ($;$) {
 }
 
 #---------------------------------------------------------------#
-# AppConfig-related subroutines
-
-#--------------------------------#
-# Name: do_var_action
-#   ACTION function for hash AppConfig variables
-# Args:
-#   $state_ref -- reference to AppConfig::State
-#   $name -- variable name
-#   $value -- new value
-sub do_var_action($$$) {
-    my $state_ref = shift;
-    my $name      = shift;
-    my $value     = shift;
-
-    my $parent = $state_ref->get(TEXT_TO_HTML);
-
-    if ($name eq TEXT_TO_HTML) {
-
-        # do nothing!
-    }
-
-    # clear the variable if given the value CLEAR
-    elsif ($value eq "CLEAR") {
-        if (ref($state_ref->get($name)) eq "HASH") {
-            %{$state_ref->get($name)} = ();
-        }
-        elsif (ref($state_ref->get($name)) eq "ARRAY") {
-            @{$state_ref->get($name)} = ();
-        }
-    }
-
-    # if this is config, read in the given config file
-    elsif ($name eq "config") {
-        if ($state_ref->get('debug')) {
-            print STDERR ">>> reading in config file $value\n";
-        }
-        $parent->file($value);
-        if ($state_ref->get('debug')) {
-            print STDERR "<<< read in config file $value\n";
-        }
-    }
-
-    if ($state_ref->get('debug')) {
-        print STDERR "=========\n changed $name to $value\n =========\n";
-        if (ref($state_ref->get($name)) eq "HASH") {
-            print STDERR Dumper($state_ref->get($name));
-        }
-        elsif (ref($state_ref->get($name)) eq "ARRAY") {
-            print STDERR Dumper($state_ref->get($name));
-        }
-    }
-}    # do_var_action
-
-#--------------------------------#
-# Name: define_vars
-#   define the variables which AppConfig will recognise
-# Args:
-#   $self
-sub define_vars {
-    my $self = shift;
-
-    # since debug is checked in the action, set it first
-    $self->define(
-        "debug",
-        {
-            DEFAULT => 0,
-        }
-    );
-
-    # reference to self!  (do not change!)
-    $self->define(
-        "TEXT_TO_HTML",
-        {
-            ARGCOUNT => ARGCOUNT_ONE,
-        }
-    );
-    $self->set(TEXT_TO_HTML, $self);
-
-    #
-    # All the options, in alphabetical order
-    #
-    $self->define(
-        "append_file|append|append_body|a|ab=s",
-        {
-            DEFAULT => "",
-        }
-    );
-    $self->define(
-        "append_head|ah=s",
-        {
-            DEFAULT => "",
-        }
-    );
-    $self->define(
-        "caps_tag|capstag|ct=s",
-        {
-            DEFAULT => "STRONG",
-        }
-    );
-    $self->define("config=s");    # name of a config file -- parsed immediately
-    $self->define("custom_heading_regexp|heading|H=s@");
-    $self->define(
-        "default_link_dict|dict=s",
-        {
-            DEFAULT => "$ENV{HOME}/.txt2html.dict",
-        }
-    );
-    $self->define(
-        "dict_debug|db=n",
-        {
-            DEFAULT => 0,
-        }
-    );
-    $self->define(
-        "doctype|dt=s",
-        {
-            DEFAULT => "-//W3C//DTD HTML 3.2 Final//EN",
-        }
-    );
-    $self->define(
-        "eight_bit_clean|eight_bit|eight|8",
-        {
-            DEFAULT => 0,
-        }
-    );
-    $self->define(
-        "escape_HTML_chars|escapechars|ec",
-        {
-            DEFAULT => 1,
-        }
-    );
-    $self->define(
-        "explicit_headings|EH",
-        {
-            DEFAULT => 0,
-        }
-    );
-    $self->define(
-        "extract",
-        {
-            DEFAULT => 0,
-        }
-    );
-    $self->define("help");
-    $self->define(
-        "hrule_min|hrule|r=n",
-        {
-            DEFAULT => 4,
-        }
-    );
-    $self->define(
-        "indent_width|indent|iw=n",
-        {
-            DEFAULT => 2,
-        }
-    );
-    $self->define(
-        "indent_par_break|ipb",
-        {
-            DEFAULT => 0,
-        }
-    );
-    $self->define("infile|file=s@");    # names of files to be processed
-    $self->define("links_dictionaries|link|l=s@");
-    $self->define(
-        "link_only|linkonly|LO",
-        {
-            DEFAULT => 0,
-        }
-    );
-    $self->define(
-        "lower_case_tags|lc_tags|LC",
-        {
-            DEFAULT => 0,
-        }
-    );
-    $self->define(
-        "mailmode|mail",
-        {
-            DEFAULT => 0,
-        }
-    );
-    $self->define(
-        "make_anchors|anchors",
-        {
-            DEFAULT => 1,
-        }
-    );
-    $self->define(
-        "make_links",
-        {
-            DEFAULT => 1,
-        }
-    );
-    $self->define(
-        "make_tables|tables",
-        {
-            DEFAULT => 0,
-        }
-    );
-    $self->define("man_help|manpage|man");
-    $self->define(
-        "min_caps_length|caps|c=n",
-        {
-            DEFAULT => 3,
-        }
-    );
-    $self->define(
-        "outfile|out|o=s",
-        {
-            DEFAULT => "-",
-        }
-    );
-    $self->define(
-        "par_indent=n",
-        {
-            DEFAULT => 2,
-        }
-    );
-    $self->define(
-        "preformat_trigger_lines|prebegin|pb=n",
-        {
-            DEFAULT => 2,
-        }
-    );
-    $self->define(
-        "endpreformat_trigger_lines|preend|pe=n",
-        {
-            DEFAULT => 2,
-        }
-    );
-    $self->define(
-        "preformat_start_marker=s",
-        {
-            DEFAULT => "^(:?(:?&lt;)|<)PRE(:?(:?&gt;)|>)\$",
-        }
-    );
-    $self->define(
-        "preformat_end_marker=s",
-        {
-            DEFAULT => "^(:?(:?&lt;)|<)/PRE(:?(:?&gt;)|>)\$",
-        }
-    );
-
-    $self->define(
-        "preformat_whitespace_min|prewhite|p=n",
-        {
-            DEFAULT => 5,
-        }
-    );
-    $self->define(
-        "prepend_file|prepend_body|pp=s",
-        {
-            DEFAULT => "",
-        }
-    );
-    $self->define(
-        "preserve_indent|pi",
-        {
-            DEFAULT => 0,
-        }
-    );
-    $self->define(
-        "short_line_length|shortline|s=n",
-        {
-            DEFAULT => 40,
-        }
-    );
-    $self->define("system_link_dict|sysdict=s");
-    $self->define(
-        "tab_width|tabwidth|tw=n",
-        {
-            DEFAULT => 8,
-        }
-    );
-    $self->define(
-        "title|t=s",
-        {
-            DEFAULT => "",
-        }
-    );
-    $self->define(
-        "titlefirst|tf",
-        {
-            DEFAULT => 0,
-        }
-    );
-    $self->define(
-        "underline_length_tolerance|ulength|ul=n",
-        {
-            DEFAULT => 1,
-        }
-    );
-    $self->define(
-        "underline_offset_tolerance|uoffset|uo=n",
-        {
-            DEFAULT => 1,
-        }
-    );
-    $self->define(
-        "unhyphenation|unhyphenate",
-        {
-            DEFAULT => 1,
-        }
-    );
-    $self->define(
-        "use_mosaic_header|mosaic|mh",
-        {
-            DEFAULT => 0,
-        }
-    );
-    $self->define(
-        "use_preformat_marker|preformat_marker|pm",
-        {
-            DEFAULT => 0,
-        }
-    );
-    $self->define(
-        "xhtml",
-        {
-            DEFAULT => 0,
-        }
-    );
-
-}    # define_vars
+# Init-related subroutines
 
 #--------------------------------#
 # Name: init_our_data
@@ -1407,10 +1219,54 @@ sub define_vars {
 sub init_our_data ($) {
     my $self = shift;
 
-    define_vars($self);
+    $self->{debug} = 0;
 
-    # read in from the __DATA__ section
-    $self->file(\*DATA);
+    #
+    # All the options, in alphabetical order
+    #
+    $self->{append_file} = '';
+    $self->{append_head} = '';
+    $self->{caps_tag} = 'STRONG';
+    $self->{custom_heading_regexp} = [];
+    $self->{default_link_dict} = "$ENV{HOME}/.txt2html.dict";
+    $self->{dict_debug} = 0;
+    $self->{doctype} = "-//W3C//DTD HTML 3.2 Final//EN";
+    $self->{eight_bit_clean} = 0;
+    $self->{escape_HTML_chars} = 1;
+    $self->{explicit_headings} = 0;
+    $self->{extract} = 0;
+    $self->{hrule_min} = 4;
+    $self->{indent_width} = 2;
+    $self->{indent_par_break} = 0;
+    $self->{infile} = [];
+    $self->{links_dictionaries} = [];
+    $self->{link_only} = 0;
+    $self->{lower_case_tags} = 0;
+    $self->{mailmode} = 0;
+    $self->{make_anchors} = 1;
+    $self->{make_links} = 1;
+    $self->{make_tables} = 0;
+    $self->{min_caps_length} = 3;
+    $self->{outfile} = '-';
+    $self->{par_indent} = 2;
+    $self->{preformat_trigger_lines} = 2;
+    $self->{endpreformat_trigger_lines} = 2;
+    $self->{preformat_start_marker} = "^(:?(:?&lt;)|<)PRE(:?(:?&gt;)|>)\$";
+    $self->{preformat_end_marker} = "^(:?(:?&lt;)|<)/PRE(:?(:?&gt;)|>)\$";
+    $self->{preformat_whitespace_min} = 5;
+    $self->{prepend_file} = '';
+    $self->{preserve_indent} = 0;
+    $self->{short_line_length} = 40;
+    $self->{system_link_dict} = '/usr/share/txt2html/TextToHTML.dict';
+    $self->{tab_width} = 8;
+    $self->{title} = '';
+    $self->{titlefirst} = 0;
+    $self->{underline_length_tolerance} = 1;
+    $self->{underline_offset_tolerance} = 1;
+    $self->{unhyphenation} = 1;
+    $self->{use_mosaic_header} = 0;
+    $self->{use_preformat_marker} = 0;
+    $self->{xhtml} = 0;
 
     # accumulation variables
     $self->{__file} = "";    # Current file being processed
@@ -1446,65 +1302,65 @@ sub init_our_data ($) {
 sub deal_with_options ($) {
     my $self = shift;
 
-    if ($self->links_dictionaries()) {
+    if ($self->{links_dictionaries}) {
 	# only put into the links dictionaries files which are readable
-	my @dict_files = @{$self->links_dictionaries()};
-	$self->args(['--link', 'CLEAR']);
+	my @dict_files = @{$self->{links_dictionaries}};
+	$self->args(links_dictionaries=>[]);
 
         foreach my $ld (@dict_files) {
             if (-r $ld) {
-                $self->set('make_links' => 1);
-		$self->args(['--link', $ld]);
+                $self->{'make_links'} = 1;
+		$self->args(['--links_dictionaries', $ld]);
             }
             else {
                 print STDERR "Can't find or read link-file $ld\n";
             }
         }
     }
-    if (!$self->make_links()) {
-        $self->set('links_dictionaries' => 0);
-        $self->set('system_link_dict'   => "");
+    if (!$self->{make_links}) {
+        $self->{'links_dictionaries'} = 0;
+        $self->{'system_link_dict'}  = "";
     }
-    if ($self->append_file()) {
-        if (!-r $self->append_file()) {
-            print STDERR "Can't find or read ", $self->append_file(), "\n";
-	    $self->set('append_file', '');
+    if ($self->{append_file}) {
+        if (!-r $self->{append_file}) {
+            print STDERR "Can't find or read ", $self->{append_file}, "\n";
+	    $self->{append_file} = '';
         }
     }
-    if ($self->prepend_file()) {
-        if (!-r $self->prepend_file()) {
-            print STDERR "Can't find or read ", $self->prepend_file(), "\n";
-	    $self->set('prepend_file', '');
+    if ($self->{prepend_file}) {
+        if (!-r $self->{prepend_file}) {
+            print STDERR "Can't find or read ", $self->{prepend_file}, "\n";
+	    $self->{'prepend_file'} = '';
         }
     }
-    if ($self->append_head()) {
-        if (!-r $self->append_head()) {
-            print STDERR "Can't find or read ", $self->append_head(), "\n";
-	    $self->set('append_head', '');
+    if ($self->{append_head}) {
+        if (!-r $self->{append_head}) {
+            print STDERR "Can't find or read ", $self->{append_head}, "\n";
+	    $self->{'append_head'} = '';
         }
     }
 
-    if (!$self->outfile()) {
-        $self->set('outfile' => "-");
+    if (!$self->{outfile}) {
+        $self->{'outfile'} = "-";
     }
 
-    $self->set('preformat_trigger_lines' => 0)
-      if ($self->preformat_trigger_lines() < 0);
-    $self->set('preformat_trigger_lines' => 2)
-      if ($self->preformat_trigger_lines() > 2);
+    $self->{'preformat_trigger_lines'} = 0
+      if ($self->{preformat_trigger_lines} < 0);
+    $self->{'preformat_trigger_lines'} = 2
+      if ($self->{preformat_trigger_lines} > 2);
 
-    $self->set('endpreformat_trigger_lines' => 1)
-      if ($self->preformat_trigger_lines() == 0);
-    $self->set('endpreformat_trigger_lines' => 0)
-      if ($self->endpreformat_trigger_lines() < 0);
-    $self->set('endpreformat_trigger_lines' => 2)
-      if ($self->endpreformat_trigger_lines() > 2);
+    $self->{'endpreformat_trigger_lines'} = 1
+      if ($self->{preformat_trigger_lines} == 0);
+    $self->{'endpreformat_trigger_lines'} = 0
+      if ($self->{endpreformat_trigger_lines} < 0);
+    $self->{'endpreformat_trigger_lines'} = 2
+      if ($self->{endpreformat_trigger_lines} > 2);
 
     $self->{__preformat_enabled} =
-      (($self->endpreformat_trigger_lines() != 0)
-      || $self->use_preformat_marker());
+      (($self->{endpreformat_trigger_lines} != 0)
+      || $self->{use_preformat_marker});
 
-    if ($self->use_mosaic_header()) {
+    if ($self->{use_mosaic_header}) {
         my $num_heading_styles = 0;
         my %heading_styles     = ();
         $heading_styles{"*"} = ++$num_heading_styles;
@@ -1516,9 +1372,9 @@ sub deal_with_options ($) {
         $self->{__heading_styles}     = \%heading_styles;
         $self->{__num_heading_styles} = $num_heading_styles;
     }
-    if ($self->xhtml()) # XHTML implies lower case
+    if ($self->{xhtml}) # XHTML implies lower case
     {
-	$self->set('lower_case_tags' => 1);
+	$self->{'lower_case_tags'} = 1;
     }
 }
 
@@ -1561,7 +1417,7 @@ sub get_tag ($$;%) {
     # Note that we only have to check for the structural tags we make,
     # not every possible HTML tag
     my $tag_prefix = '';
-    if ($self->xhtml())
+    if ($self->{xhtml})
     {
 	if ($open_tag eq 'P' and $in_tag eq 'P'
 	    and $args{tag_type} ne 'end')
@@ -1593,7 +1449,7 @@ sub get_tag ($$;%) {
     }
     else
     {
-	if ($self->lower_case_tags())
+	if ($self->{lower_case_tags})
 	{
 	    $out_tag =~ s/($in_tag)/\L$1/;
 	}
@@ -1603,7 +1459,7 @@ sub get_tag ($$;%) {
 	}
 	if ($args{tag_type} eq 'empty')
 	{
-	    if ($self->xhtml())
+	    if ($self->{xhtml})
 	    {
 		$out_tag = "<${out_tag}${inside_tag}/>";
 	    }
@@ -1619,7 +1475,7 @@ sub get_tag ($$;%) {
 	}
     }
     $out_tag = $tag_prefix . $out_tag;
-    if ($self->dict_debug & 8)
+    if ($self->{dict_debug} & 8)
     {
 	print STDERR "open_tag = '${open_tag}', in_tag = '${in_tag}', tag_type = ", $args{tag_type}, ", inside_tag = '${inside_tag}', out_tag = '$out_tag'\n";
     }
@@ -1638,7 +1494,7 @@ sub close_tag ($$) {
 	$in_tag = $open_tag;
     }
     my $out_tag = $in_tag;
-    if ($self->lower_case_tags())
+    if ($self->{lower_case_tags})
     {
 	$out_tag =~ s/($in_tag)/\L$1/;
     }
@@ -1651,7 +1507,7 @@ sub close_tag ($$) {
     {
 	pop @{$self->{__tags}};
     }
-    if ($self->dict_debug & 8)
+    if ($self->{dict_debug} & 8)
     {
 	print STDERR "close_tag: open_tag = '${open_tag}', in_tag = '${in_tag}', out_tag = '$out_tag'\n";
     }
@@ -1665,13 +1521,8 @@ sub hrule ($$$$) {
     my $para_action_ref = shift;
     my $ind		= shift;
 
-    my $hrmin = $self->hrule_min();
+    my $hrmin = $self->{hrule_min};
     if ($para_lines_ref->[$ind] =~ /^\s*([-_~=\*]\s*){$hrmin,}$/) {
-	if ($ind != 0)
-	{
-	    $para_lines_ref->[$ind - 1] =~ s/<P>//;
-	    pop @{$self->{__tags}};
-	}
 	my $tag = $self->get_tag("HR", tag_type=>'empty');
         $para_lines_ref->[$ind] = "$tag\n";
 	$para_action_ref->[$ind] |= $HRULE;
@@ -1702,7 +1553,7 @@ sub shortline ($$$$$$$) {
     if (!(${$mode_ref} & ($PRE | $LIST | $TABLE))
         && !is_blank(${$line_ref})
         && !is_blank(${$prev_ref})
-        && ($prev_line_len < $self->short_line_length())
+        && ($prev_line_len < $self->{short_line_length})
         && !(${$line_action_ref} & ($END | $HEADER | $HRULE | $LIST | $IND_BREAK| $PAR))
         && !(${$prev_action_ref} & ($HEADER | $HRULE | $BREAK | $IND_BREAK)))
     {
@@ -1786,12 +1637,12 @@ sub paragraph ($$$$$$) {
             $END | $MAILQUOTE | $CAPS | $BREAK)
         && (is_blank(${$prev_ref})
             || (${$line_action_ref} & $END)
-            || ($line_indent > $prev_indent + $self->par_indent())))
+            || ($line_indent > $prev_indent + $self->{par_indent})))
     {
-	if ($self->indent_par_break()
+	if ($self->{indent_par_break}
 	    && !is_blank(${$prev_ref})
 	    && !(${$line_action_ref} & $END)
-	    && ($line_indent > $prev_indent + $self->par_indent()))
+	    && ($line_indent > $prev_indent + $self->{par_indent}))
 	{
 	    $tag = $self->get_tag('BR', tag_type=>'empty');
 	    ${$prev_ref} .= $tag;
@@ -1800,7 +1651,7 @@ sub paragraph ($$$$$$) {
 	    ${$prev_action_ref} |= $BREAK;
 	    ${$line_action_ref} |= $IND_BREAK;
 	}
-	elsif ($self->preserve_indent())
+	elsif ($self->{preserve_indent})
 	{
 	    $tag = $self->get_tag('P');
 	    ${$prev_ref} .= $tag;
@@ -1816,14 +1667,14 @@ sub paragraph ($$$$$$) {
 	}
     }
     # detect also a continuing indentation at the same level
-    elsif ($self->indent_par_break()
+    elsif ($self->{indent_par_break}
         && !(${$mode_ref} & ($PRE | $TABLE | $LIST))
 	&& !is_blank(${$prev_ref})
 	&& !(${$line_action_ref} & $END)
 	&& (${$prev_action_ref} & ($IND_BREAK | $PAR))
         && !subtract_modes(${$line_action_ref},
             $END | $MAILQUOTE | $CAPS)
-        && ($line_indent > $self->par_indent())
+        && ($line_indent > $self->{par_indent})
 	&& ($line_indent == $prev_indent)
 	)
     {
@@ -1908,7 +1759,7 @@ sub startlist ($$$$$$$$) {
     }
 
     $self->{__listnum}++;
-    $self->{__list_indent} = " " x $self->{__listnum} x $self->indent_width();
+    $self->{__list_indent} = " " x $self->{__listnum} x $self->{indent_width};
     $para_action_ref->[$ind] |= $LIST;
     $para_action_ref->[$ind] |= $LIST_START;
     $self->{__mode} |= $LIST;
@@ -1925,7 +1776,7 @@ sub endlist ($$$$) {
     my $tag = '';
     for (; $n > 0 ; $n--, $self->{__listnum}--) {
         $self->{__list_indent} =
-          " " x ($self->{__listnum} - 1) x $self->indent_width();
+          " " x ($self->{__listnum} - 1) x $self->{indent_width};
         if ($self->{__list}->[$self->{__listnum} - 1] == $UL) {
 	    $tag = $self->get_tag('UL', tag_type=>'end');
             ${$prev_ref} .= $self->{__list_indent} . "${tag}\n";
@@ -2147,14 +1998,14 @@ sub tablestuff ($$$) {
                   $cell =~ s/^ +//;
                   $cell =~ s/ +$//;
 
-                  if ($self->escape_HTML_chars()) {
+                  if ($self->{escape_HTML_chars}) {
                       $cell = escape($cell);
                   }
 
                   ($self->get_tag('TD', 
-		    inside_tag=>($self->xhtml()
+		    inside_tag=>($self->{xhtml}
 			? $xhtml_alignments[$align[$_]]
-			: ($self->lower_case_tags()
+			: ($self->{lower_case_tags}
 			    ? $lc_alignments[$align[$_]]
 			    : $alignments[$align[$_]]))),
 		    $cell, $self->close_tag('TD'));
@@ -2164,7 +2015,7 @@ sub tablestuff ($$$) {
 
         # put the <TABLE> around the rows
 	my $tag;
-	if ($self->xhtml())
+	if ($self->{xhtml})
 	{
 	    $tag = $self->get_tag('TABLE', inside_tag=>' summary=""');
 	}
@@ -2188,7 +2039,7 @@ sub is_preformatted ($$) {
     my $self = shift;
     my $line = shift;
 
-    my $pre_white_min = $self->preformat_whitespace_min();
+    my $pre_white_min = $self->{preformat_whitespace_min};
     my $result = (($line =~ /\s{$pre_white_min,}\S+/o)    # whitespaces
       || ($line =~ /\.{$pre_white_min,}\S+/o));    # dots
     return $result;
@@ -2204,7 +2055,8 @@ sub endpreformat ($$$$$) {
 
     my $tag = '';
     if (${$mode_ref} & $PRE_EXPLICIT) {
-        if ($para_lines_ref->[$ind] =~ /$self->preformat_end_marker()/io) {
+	my $pe_mark = $self->{preformat_end_marker};
+        if ($para_lines_ref->[$ind] =~ /$pe_mark/io) {
 	    if ($ind == 0)
 	    {
 		$tag = $self->get_tag('PRE', tag_type=>'end');
@@ -2223,7 +2075,7 @@ sub endpreformat ($$$$$) {
     }
 
     if (!$self->is_preformatted($para_lines_ref->[$ind])
-        && ($self->endpreformat_trigger_lines() == 1
+        && ($self->{endpreformat_trigger_lines} == 1
             || ($ind + 1 < @{$para_lines_ref}
 		&& !$self->is_preformatted($para_lines_ref->[$ind + 1]))
 	    || $ind + 1 >= @{$para_lines_ref} # last line of para
@@ -2254,8 +2106,8 @@ sub preformat ($$$$$$) {
     my $next_ref        = shift;
 
     my $tag = '';
-    if ($self->use_preformat_marker()) {
-        my $pstart = $self->preformat_start_marker();
+    if ($self->{use_preformat_marker}) {
+        my $pstart = $self->{preformat_start_marker};
         if (${$line_ref} =~ /$pstart/io) {
             if (${$prev_ref} =~ s/<P>$//)
 	    {
@@ -2269,9 +2121,9 @@ sub preformat ($$$$$$) {
         }
     }
 
-    if ($self->preformat_trigger_lines() == 0
+    if ($self->{preformat_trigger_lines} == 0
         || ($self->is_preformatted(${$line_ref})
-            && ($self->preformat_trigger_lines() == 1
+            && ($self->{preformat_trigger_lines} == 1
                 || $self->is_preformatted(${$next_ref}))))
     {
 	if (${$prev_ref} =~ s/<P>$//)
@@ -2314,9 +2166,9 @@ sub anchor_mail ($$) {
     my $self     = shift;
     my $line_ref = shift;
 
-    if ($self->make_anchors()) {
+    if ($self->{make_anchors}) {
         my ($anchor) = $self->make_new_anchor(0);
-	if ($self->lower_case_tags()) {
+	if ($self->{lower_case_tags}) {
 	    ${$line_ref} =~ s/([^ ]*)/<a name="$anchor">$1<\/a>/;
 	} else {
 	    ${$line_ref} =~ s/([^ ]*)/<A NAME="$anchor">$1<\/A>/;
@@ -2329,18 +2181,18 @@ sub anchor_heading ($$$) {
     my $level    = shift;
     my $line_ref = shift;
 
-    if ($self->dict_debug() & 8) {
+    if ($self->{dict_debug} & 8) {
 	print STDERR "anchor_heading: ", ${$line_ref}, "\n";
     }
-    if ($self->make_anchors()) {
+    if ($self->{make_anchors}) {
         my ($anchor) = $self->make_new_anchor($level);
-	if ($self->lower_case_tags()) {
+	if ($self->{lower_case_tags}) {
 	    ${$line_ref} =~ s/(<h.>)(.*)(<\/h.>)/$1<a name="$anchor">$2<\/a>$3/;
 	} else {
 	    ${$line_ref} =~ s/(<H.>)(.*)(<\/H.>)/$1<A NAME="$anchor">$2<\/A>$3/;
 	}
     }
-    if ($self->dict_debug() & 8) {
+    if ($self->{dict_debug} & 8) {
 	print STDERR "anchor_heading(after): ", ${$line_ref}, "\n";
     }
 }
@@ -2375,8 +2227,8 @@ sub heading ($$$$) {
     $offsetdiff *= -1 if $offsetdiff < 0;
 
     if (is_blank(${$line_ref})
-        || ($lendiff > $self->underline_length_tolerance())
-        || ($offsetdiff > $self->underline_offset_tolerance()))
+        || ($lendiff > $self->{underline_length_tolerance})
+        || ($offsetdiff > $self->{underline_offset_tolerance}))
     {
         return;
     }
@@ -2402,10 +2254,10 @@ sub custom_heading ($$$$) {
     my $line_action_ref = shift;
 
     my ($i, $level);
-    for ($i = 0 ; $i < @{$self->custom_heading_regexp()} ; $i++) {
-        my $reg = ${$self->custom_heading_regexp()}[$i];
+    for ($i = 0 ; $i < @{$self->{custom_heading_regexp}} ; $i++) {
+        my $reg = ${$self->{custom_heading_regexp}}[$i];
         if ($para_lines_ref->[$ind] =~ /$reg/) {
-            if ($self->explicit_headings()) {
+            if ($self->{explicit_headings}) {
                 $level = $i + 1;
             }
             else {
@@ -2443,8 +2295,8 @@ sub untabify ($$) {
     my $line = shift;
 
     while ($line =~ /\011/) {
-        $line =~ s/\011/" " x ($self->tab_width() - (length($`) %
-	    $self->tab_width()))/e;
+	my $tw = $self->{tab_width};
+        $line =~ s/\011/" " x ($tw - (length($`) % $tw))/e;
     }
     $line;
 }
@@ -2464,7 +2316,7 @@ sub iscaps {
     my $self = shift;
     local ($_) = @_;
 
-    my $min_caps_len = $self->min_caps_length();
+    my $min_caps_len = $self->{min_caps_length};
 
     # This is ugly, but I don't know a better way to do it.
     # (And, yes, I could use the literal characters instead of the 
@@ -2479,7 +2331,7 @@ sub caps {
     my $line_action_ref = shift;
 
     if ($self->iscaps(${$line_ref})) {
-        $self->tagline($self->caps_tag(), $line_ref);
+        $self->tagline($self->{caps_tag}, $line_ref);
         ${$line_action_ref} |= $CAPS;
     }
 }
@@ -2534,10 +2386,10 @@ sub add_regexp_to_links_table ($$$$) {
 	my $ind = @{$self->{__links_table_order}} - 1;
         print STDERR " (", $ind,
           ")\tKEY: $key\n\tVALUE: $URL\n\tSWITCHES: $switches\n\n"
-          if ($self->dict_debug() & 1);
+          if ($self->{dict_debug} & 1);
     }
     else {
-        if ($self->dict_debug() & 1) {
+        if ($self->{dict_debug} & 1) {
             print STDERR " Skipping entry.  Key already in table.\n";
             print STDERR "\tKEY: $key\n\tVALUE: $URL\n\n";
         }
@@ -2568,7 +2420,7 @@ sub parse_dict ($$$) {
     my ($dictfile, $dict) = @_;
 
     print STDERR "Parsing dictionary file $dictfile\n"
-      if ($self->dict_debug() & 1);
+      if ($self->{dict_debug} & 1);
 
     $dict =~ s/^\#.*$//mg;           # Strip lines that start with '#'
     $dict =~ s/^.*[^\\]:\s*$//mg;    # Strip lines that end with unescaped ':'
@@ -2644,7 +2496,7 @@ sub setup_dict_checking ($) {
         if (!($switches & $LINK_HTML))
 	{
 	    $href =~ s#/#\\/#g;
-	    if ($self->lower_case_tags())
+	    if ($self->{lower_case_tags})
 	    {
 		$href = '<a href="' . $href . '">$&<\\/a>'
 	    }
@@ -2656,7 +2508,7 @@ sub setup_dict_checking ($) {
 	else
 	{
 	    # change the uppercase tags to lower case
-	    if ($self->lower_case_tags())
+	    if ($self->{lower_case_tags})
 	    {
 		$href =~ s#(</)([A-Z]*)(>)#${1}\L${2}${3}#g;
 		$href =~ s/(<)([A-Z]*)(>)/${1}\L${2}${3}/g;
@@ -2680,7 +2532,7 @@ sub setup_dict_checking ($) {
         # not just those cases where we have a "e" switch.
         $code =
 "\$self->{__repl_code}->[$i] = sub {\nmy \$al = shift;\n\$al =~ s/$pattern/$href/$r_sw;\nreturn \$al; }\n";
-        print STDERR "$code" if ($self->dict_debug() & 2);
+        print STDERR "$code" if ($self->{dict_debug} & 2);
         eval "$code";
 
         # compile searching pattern
@@ -2700,7 +2552,7 @@ sub in_link_context ($$$) {
     return 1 if $match =~ m@</?A>@i;    # No links allowed inside match
 
     my ($final_open, $final_close);
-    if ($self->lower_case_tags()) {
+    if ($self->{lower_case_tags}) {
 	$final_open  = rindex($before, "<a ") - $[;
 	$final_close = rindex($before, "</a>") - $[;
     }
@@ -2767,7 +2619,7 @@ sub check_dictionary_links ($$$) {
                   substr(${$line_ref}, length($before) + length($linkme));
                 if (!$self->in_link_context($linkme, $line_with_links . $before)) {
                     print STDERR "Link rule $i matches $linkme\n"
-                      if ($self->dict_debug() & 4);
+                      if ($self->{dict_debug} & 4);
 
                     # call the special subroutine already created to do
                     # this replacement
@@ -2793,7 +2645,7 @@ sub check_dictionary_links ($$$) {
                   substr(${$line_ref}, length($before) + length($linkme));
                 if (!$self->in_link_context($linkme, $line_with_links . $before)) {
                     print STDERR "Link rule $i matches $linkme\n"
-                      if ($self->dict_debug() & 4);
+                      if ($self->{dict_debug} & 4);
 
                     # call the special subroutine already created to do
                     # this replacement
@@ -2815,7 +2667,7 @@ sub check_dictionary_links ($$$) {
                   substr(${$line_ref}, length($before) + length($linkme));
                 if (!$self->in_link_context($linkme, $line_with_links . $before)) {
                     print STDERR "Link rule $i matches $linkme\n"
-                      if ($self->dict_debug() & 4);
+                      if ($self->{dict_debug} & 4);
 
                     # call the special subroutine already created to do
                     # this replacement
@@ -2836,7 +2688,7 @@ sub load_dictionary_links ($) {
     @{$self->{__links_table_order}} = 0;
     %{$self->{__links_table}}       = ();
 
-    foreach $dict (@{$self->links_dictionaries()}) {
+    foreach $dict (@{$self->{links_dictionaries}}) {
         next unless $dict;
 	    open(DICT, "$dict") || die "Can't open Dictionary file $dict\n";
 
@@ -2869,20 +2721,20 @@ sub do_file_start ($$$) {
     my $outhandle = shift;
     my $para      = shift;
 
-    if (!$self->extract()) {
+    if (!$self->{extract}) {
         my @para_lines = split (/\n/, $para);
         my $first_line = $para_lines[0];
 
-	if ($self->doctype())
+	if ($self->{doctype})
 	{
-	    if ($self->xhtml())
+	    if ($self->{xhtml})
 	    {
 		print $outhandle '<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"', "\n";
 		print $outhandle '"http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">', "\n";
 	    }
 	    else
 	    {
-		print $outhandle '<!DOCTYPE HTML PUBLIC "' . $self->doctype() . "\">\n";
+		print $outhandle '<!DOCTYPE HTML PUBLIC "' . $self->{doctype} . "\">\n";
 	    }
 	}
         print $outhandle $self->get_tag('HTML'), "\n";
@@ -2890,28 +2742,28 @@ sub do_file_start ($$$) {
 
         # if --titlefirst is set and --title isn't, use the first line
         # as the title.
-        if ($self->titlefirst() && !$self->title()) {
+        if ($self->{titlefirst} && !$self->{title}) {
             my ($tit) = $first_line =~ /^ *(.*)/;    # grab first line
             $tit =~ s/ *$//;                         # strip trailing whitespace
-            $tit = escape($tit) if $self->escape_HTML_chars();
-            $self->set('title' => $tit);
+            $tit = escape($tit) if $self->{escape_HTML_chars};
+            $self->{'title'} = $tit;
         }
-        if (!$self->title()) {
-            $self->set('title' => "");
+        if (!$self->{title}) {
+            $self->{'title'} = "";
         }
-        print $outhandle $self->get_tag('TITLE'), $self->title(),
+        print $outhandle $self->get_tag('TITLE'), $self->{title},
 	    $self->get_tag('TITLE', tag_type=>'end'), "\n";
 
-        if ($self->append_head()) {
-            open(APPEND, $self->append_head())
-              || die "Failed to open $self->append_head()\n";
+        if ($self->{append_head}) {
+            open(APPEND, $self->{append_head})
+              || die "Failed to open ", $self->{append_head}, "\n";
             while (<APPEND>) {
                 print $outhandle $_;
             }
             close(APPEND);
         }
 
-	if ($self->lower_case_tags())
+	if ($self->{lower_case_tags})
 	{
 	    print $outhandle $self->get_tag('META', tag_type=>'empty',
 		inside_tag=>" name=\"generator\" content=\"$PROG v$VERSION\""),
@@ -2927,16 +2779,16 @@ sub do_file_start ($$$) {
         print $outhandle $self->get_tag('BODY'), "\n";
     }
 
-    if ($self->prepend_file()) {
-        if (-r $self->prepend_file()) {
-            open(PREPEND, $self->prepend_file());
+    if ($self->{prepend_file}) {
+        if (-r $self->{prepend_file}) {
+            open(PREPEND, $self->{prepend_file});
             while (<PREPEND>) {
                 print $outhandle $_;
             }
             close(PREPEND);
         }
         else {
-            print STDERR "Can't find or read file ", $self->prepend_file(),
+            print STDERR "Can't find or read file ", $self->{prepend_file},
               " to prepend.\n";
         }
     }
@@ -2949,12 +2801,12 @@ sub do_init_call ($) {
     my $self     = shift;
 
     if (!$self->{__call_init_done}) {
-	push (@{$self->links_dictionaries()}, ($self->default_link_dict()))
-	  if ($self->make_links() && (-f $self->default_link_dict()));
+	push (@{$self->{links_dictionaries}}, ($self->{default_link_dict}))
+	  if ($self->{make_links} && (-f $self->{default_link_dict}));
 	$self->deal_with_options();
-	if ($self->make_links()) {
-	    push (@{$self->links_dictionaries()}, ($self->system_link_dict()))
-	      if -f $self->system_link_dict();
+	if ($self->{make_links}) {
+	    push (@{$self->{links_dictionaries}}, ($self->{system_link_dict}))
+	      if -f $self->{system_link_dict};
 	    $self->load_dictionary_links();
 	}
      
@@ -2976,9 +2828,6 @@ sub run_txt2html {
 
     my $conv = new HTML::TextToHTML(\@ARGV);
 
-    # check for help messages
-    $conv->do_help();
-
     my @args = ();
 
     # now the remainder must be input-files
@@ -2990,89 +2839,10 @@ sub run_txt2html {
 
 =head1 FILE FORMATS
 
-There are two kinds of files which are used which can affect the outcome of
-the conversion.  One is a config file, which can contain any of the
-arguments described in L<OPTIONS> and is treated the same as if they were
-entered in a script or from the command line.  The other is the link
-dictionary, which contains patterns (of how to recognise http links and
-other things) and how to convert them.
-
-=head2 Config File
-
-The Config file is a way of specifying default options in a file instead
-of having to do it when you call this.
-
-The file may contain blank lines and comments (prefixed by
-'#') which are ignored.  Continutation lines may be marked
-by ending the line with a '\'.
-
-    # this is a comment
-    title = Page of Wonderful and Inexplicably Joyous \
-    Things You Want To Know About
-
-Options that are simple flags and do not expect an argument can be
-specified without any value.  They will be set with the value 1, with any
-value explicitly specified (except "0" and "off") being ignored.  The
-option may also be specified with a "no" prefix to implicitly set the
-variable to 0.
-
-    mail                                 # on (1)
-    mail = 1                             # on (1)
-    mail = 0                             # off (0)
-    mail off                             # off (0)
-    mail on                              # on (1)
-    mail mumble                          # on (1)
-    nomail                               # off (0)
-
-Options that expect an argument (but are not cumulative) will
-be set to whatever follows the variable name, up to the end of the
-current line.  An equals sign may be inserted between the option
-and value for clarity.
-
-    tab_width = 8
-    tab_width   4
-
-Each subsequent re-definition of the option value overwites
-the previous value.  From the above example, the value of the tab
-width would now be 4.
-
-Some options are simple cumulative options, with each subsequent
-definition of the option adding to the list of previously set values
-for that option.
-
-    heading = '^ *\d+\. \w+'
-    heading = '^ *\d+\.\d+\. \w+'
-    heading = '^ *\d+\.\d+\.\d+\. \w+'
-
-If you want to clear the list and start again, give the CLEAR option.
-
-    heading = CLEAR
-
-The '-' prefix can be used to reset a variable to its
-default value and the '+' prefix can be used to set it to 1.
-
-    -mail
-    +debug
-
-Option values may contain references to other options, environment
-variables and/or users' home directories.
-
-    link = ~/.link_dict	# expand '~' to home directory
-
-    mail = ${TXT_MAIL}   # expand TXT_MAIL environment variable
-
-The configuration file may have options arranged in blocks.  A block
-header, consisting of the block name in square brackets, introduces a
-configuration block.  The block name and an underscore are then prefixed to
-the names of all options subsequently referenced in that block.  The
-block continues until the next block definition or to the end of the
-current file.
-
-    [underline]
-    length_tolerance = 8    # underline_length_tolerance = 8
-    offset_tolerance = 4    # underline_offset_tolerance = 4
-
-See AppConfig for more information.
+There are two files which are used which can affect the outcome of the
+conversion.  One is the link dictionary, which contains patterns (of how
+to recognise http links and other things) and how to convert them. The
+other is, naturally, the format of the input file itself.
 
 =head2 Link Dictionary
 
@@ -3160,6 +2930,41 @@ of HTML::TextToHTML and convert it to a link to the module's home page.
 
     "HTML::TextToHTML"  -io-> http://www.katspace.com/tools/text_to_html/
 
+=head2 Input File Format
+
+For the most part, this module tries to use intuitive conventions for
+determining the structure of the text input.  Unordered lists are
+marked by bullets; ordered lists are marked by numbers or letters;
+in either case, an increase in indentation marks a sub-list contained
+in the outer list.
+
+Headers (apart from custom headers) are distinguished by "underlines"
+underneath them; headers in all-capitals are distinguished from
+those in mixed case.
+
+Tables require a more rigid convention.  A table must be marked as a
+separate paragraph, that is, it must be surrounded by blank lines.
+Columns must be separated by two or more spaces (this prevents
+accidental incorrect recognition of a paragraph where interword spaces
+happen to line up).  If there are two or more rows in a paragraph and
+all rows share the same set of (two or more) columns, the paragraph is
+assumed to be a table.  For example
+
+    -e  File exists.
+    -z  File has zero size.
+    -s  File has nonzero size (returns size).
+
+becomes
+
+    <TABLE>
+    <TR><TD>-e</TD><TD>File exists.</TD></TR>
+    <TR><TD>-z</TD><TD>File has zero size.</TD></TR>
+    <TR><TD>-s</TD><TD>File has nonzero size (returns size).</TD></TR>
+    </TABLE>
+
+This guesses for each column whether it is intended to be left,
+centre or right aligned.
+
 =head1 EXAMPLES
 
     use HTML::TextToHTML;
@@ -3168,20 +2973,26 @@ of HTML::TextToHTML and convert it to a link to the module's home page.
 
     my $conv = new HTML::TextToHTML();
 
-    my $conv = new HTML::TextToHTML(["--title", "Wonderful Things",
-			    "--system_link_dict", $my_link_file,
-      ]);
+    my $conv = new HTML::TextToHTML(title=>"Wonderful Things",
+			    system_link_dict=>$my_link_file,
+      );
 
     my $conv = new HTML::TextToHTML(\@ARGV);
 
 =head2 Add further arguments
 
-    $conv->args(["--short_line_length", 60,
-	       "--prebegin", 4,
-	       "--caps_tag", "strong",
-      ]);
+    $conv->args(short_line_length=>60,
+	       preformat_trigger_lines=>4,
+	       caps_tag=>"strong",
+      );
 
 =head2 Convert a file
+
+    $conv->txt2html(infile=>[$text_file],
+                     outfile=>$html_file,
+		     title=>"Wonderful Things",
+		     mail=>1
+      );
 
     $conv->txt2html(["--file", $text_file,
                      "--outfile", $html_file,
@@ -3214,9 +3025,7 @@ Tell me about them.
 
 HTML::TextToHTML requires Perl 5.005_03 or later.
 
-It also requires AppConfig, 
-Data::Dumper (only for debugging purposes)
-and Pod::Usage.
+It also requires Data::Dumper (only for debugging purposes)
 
 =head1 EXPORT
 
@@ -3224,21 +3033,16 @@ run_txt2html
 
 =head1 AUTHOR
 
-Kathryn Andersen, E<lt>rubykat@katspace.comE<gt>
+Kathryn Andersen, E<lt>rubykat@katspace.comE<gt> 2002
+Original txt2html script copyright (C) 2000 Seth Golub <seth@aigeek.com>
 
 =head1 SEE ALSO
 
 L<perl>.
 L<txt2html>.
-AppConfig
-Pod::Usage
 Data::Dumper
 
 =cut
 
 #------------------------------------------------------------------------
 1;
-
-# These are the default settings
-__DATA__
-system_link_dict = /usr/share/txt2html/txt2html.dict

@@ -5,8 +5,9 @@ by Seth Golub for txt2html.
 
 I used the following options to convert this document:
 
-     -tf --mail --tables --heading '^ *--[\w\s]+-- *$'
-     --system_link_dict TextToHTML.dict --link section.dict
+     --titlefirst --mailmode --make_tables
+     --custom_heading_regexp '^ *--[\w\s]+-- *$'
+     --system_link_dict TextToHTML.dict
      --append_body sample.foot --infile sample.txt --outfile sample.html
 
 This has either been done at the command line with:
@@ -137,6 +138,9 @@ Features of HTML::TextToHTML
 
  * Now with Tables!  No need for fancy delimiters, this figures out
    tables by looking at the layout, the spacing of the cells.
+ * Now with XHTML!  Turn on the --xhtml option and it will ensure that
+   all paragraphs and list items have end-tags, all tags are in
+   lower-case, and the doctype is for XHTML.
 
 Example of short lines
 ----------------------
@@ -226,10 +230,7 @@ A. I would like to be able to preserve lettered lists, that is:
       does)
    b) display the correct OL properties with CSS so as to preserve
       that information.
-B. Related to the above, I would like to use correct XHTML, not 3.2 HTML.
-  I am not sure if I would like it to be optional.
-
-Perhaps it would be nice to have tables with borders,
+B. Perhaps it would be nice to have tables with borders,
 though I'm not sure how exactly to define them.
 
 Definition lists would also be cool.

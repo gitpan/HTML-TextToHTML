@@ -1,0 +1,796 @@
+use ExtUtils::configPL;
+<<--startperl-->> -w
+##---------------------------------------------------------------------------##
+
+=head1 NAME
+
+texthyper - convert plain text file to HTML
+
+=head1 SYNOPSIS
+
+texthyper --help
+
+texthyper --manpage
+
+texthyper [ --append_file I<filename> ] [ --append_head I<filename> ]
+    [ --caps_tag I<tag> ] { --custom_heading_regexp I<regexp> } [ --debug ]
+    [ --default_link_dict I<filename> ] [ --dict_debug I<n> ]
+    [ --doctype I<doctype> ] [ --eight_bit_clean ] [ --escape_HTML_chars ]
+    [ --explicit_headings ] [ --extract ] [ --hrule_min I<n> ]
+    [ --indent_width I<n> ] [ --indent_par_break ] { --infile I<filename> }
+    { --links_dictionaries I<filename> } [ --link_only ] [ --mailmode ]
+    [ --make_anchors ] [ --make_tables ] [ --min_caps_length I<n> ]
+    [ --outfile I<filename> ] [ --par_indent I<n> ]
+    [ --preformat_trigger_lines I<n> ] [ --endpreformat_trigger_lines I<n> ]
+    [ --preformat_start_marker I<regexp> ] [ --preformat_end_marker I<regexp> ]
+    [ --preformat_whitespace_min I<n> ] [ --prepend_file I<filename> ]
+    [ --preserve_indent ] [ --short_line_length I<n> ]
+    [ --system_link_dict I<filename> ] [ --tab_width I<n> ]
+    [ --title I<title> ] [ --titlefirst ] [ --underline_length_tolerance I<n> ]
+    [ --underline_offset_tolerance I<n> ] [ --unhyphenation ]
+    [ --use_mosaic_header ] [ --use_preformat_marker ] [ --xhtml ] file ...
+
+=head1 DESCRIPTION
+
+texthyper converts plain text files to HTML.
+
+It supports headings, tables, lists, simple character markup, and
+hyperlinking, and is highly customizable. It recognizes some of the
+apparent structure of the source document (mostly whitespace and
+typographic layout), and attempts to mark that structure explicitly
+using HTML. The purpose for this tool is to provide an easier way of
+converting existing text documents to HTML format.
+
+One can use texthyper as a filter, outputting the result to STDOUT,
+or to a given file.
+
+One can define options in a config file as well as on the command-line.
+
+=head1 OPTIONS
+
+Option names can be abbreviated to the shortest unique name for that option.
+Options can start with "--" or "-". Boolean options can be negated
+by preceding them with "no"; options with hash or array values
+can be added to by giving the option again for each value.
+
+See L<Getopt::Long> for more information.
+
+If the Getopt::ArgvFile module is installed, then groups of options can
+be read from a file or files designated by the @ character preceding
+the name.  For example:
+
+    texthyper @poem_options --outfile poem_glory.html  poem_glory.txt
+
+See L<Options Files> for more information.
+
+=over 8
+
+=item --append_file I<filename> | --append I<filename> | --append_body I<filename>
+
+If you want something appended by default, put the filename here.
+The appended text will not be processed at all, so make sure it's
+plain text or decent HTML.  i.e. do not have things like:
+    Kathryn Andersen E<lt>rubykat@example.comE<gt>
+but instead, have:
+    Kathryn Andersen &lt;rubykat@example.com&gt;
+
+(default: nothing)
+
+=item --append_head I<filename> | -ah I<filename>
+
+If you want something appended to the head by default, put the filename here.
+The appended text will not be processed at all, so make sure it's
+plain text or decent HTML.  i.e. do not have things like:
+    Kathryn Andersen E<lt>rubykat@example.comE<gt>
+but instead, have:
+    Kathryn Andersen &lt;rubykat@example.com&gt;
+
+(default: nothing)
+
+=item --caps_tag I<tag> | --capstag I<tag> | -ct I<tag>
+
+Tag to put around all-caps lines
+(default: STRONG)
+
+=item --custom_heading_regexp I<regexp> | --heading I<regexp> | -H I<regexp>
+
+Add a regexp for headings.  Header levels are assigned by regexp
+in order seen When a line matches a custom header regexp, it is tagged as
+a header.  If it's the first time that particular regexp has matched,
+the next available header level is associated with it and applied to
+the line.  Any later matches of that regexp will use the same header level.
+Therefore, if you want to match numbered header lines, you could use
+something like this:
+    -H '^ *\d+\. \w+' -H '^ *\d+\.\d+\. \w+' -H '^ *\d+\.\d+\.\d+\. \w+'
+
+Then lines like
+                " 1. Examples "
+                " 1.1 Things"
+            and " 4.2.5 Cold Fusion"
+Would be marked as H1, H2, and H3 (assuming they were found in that
+order, and that no other header styles were encountered).
+If you prefer that the first one specified always be H1, the second
+always be H2, the third H3, etc, then use the -EH/--explicit-headings
+option.
+
+This is a multi-valued option.
+
+(default: none)
+
+=item --debug
+
+Enable copious script debugging output (don't bother, this is for the
+developer)
+
+=item --default_link_dict I<filename>
+
+The name of the default "user" link dictionary.
+(default: "$ENV{'HOME'}/.txt2html.dict" -- this is the same as for
+the txt2html script)
+
+=item --dict_debug I<n> | -db I<n>
+
+Debug mode for link dictionaries Bitwise-Or what you want to see:
+          1: The parsing of the dictionary
+          2: The code that will make the links
+          4: When each rule matches something
+          8: When each tag is created
+
+(default: 0)
+
+=item --doctype I<doctype> | --dt I<doctype>
+
+This gets put in the DOCTYPE field at the top of the document, unless it's
+empty.  (default : "-//W3C//DTD HTML 3.2 Final//EN")
+If --xhtml is true, the contents of this is ignored, unless it's
+empty, in which case no DOCTYPE declaration is output.
+
+=item --eight_bit_clean | -8
+
+disable Latin-1 character entity naming
+(default: false)
+
+=item --escape_HTML_chars | --escape_chars | -ec
+
+turn & E<lt> E<gt> into &amp; &gt; &lt;
+(default: true)
+
+=item --explicit_headings | -EH
+
+Don't try to find any headings except the ones specified in the
+--custom_heading_regexp option.
+Also, the custom headings will not be assigned levels in the order they
+are encountered in the document, but in the order they are specified on
+the command line.
+(default: false)
+
+=item --extract
+
+Extract Mode; don't put HTML headers or footers on the result, just
+the plain HTML (thus making the result suitable for inserting into
+another document (or as part of the output of a CGI script).
+(default: false)
+
+=item --hrule_min I<n> | --hrule I<n> | -r I<n>
+
+Min number of ---s for an HRule.
+(default: 4)
+
+=item --indent_width I<n> | --indent I<n> | -iw I<n>
+
+Indents this many spaces for each level of a list.
+(default: 2)
+
+=item --indent_par_break | -ipb
+
+Treat paragraphs marked solely by indents as breaks with indents.
+That is, instead of taking a three-space indent as a new paragraph,
+put in a <BR> and three non-breaking spaces instead.
+(see also --preserve_indent)
+(default: false)
+
+=item --infile I<filename>
+
+The name of the input file.
+This is a cumulative list argument.  If you want to process more than
+one file, just add another --infile I<file> to the list of arguments.
+Or else just add the filename without the option, after all the options.
+(default:undefined)
+
+=item --links_dictionaries I<filename> | --link I<filename> | -l I<filename>
+
+File to use as a link-dictionary.  There can be more than one of these.
+These are in addition to the System Link Dictionary and the User Link
+Dictionary.
+
+=item --link_only | --linkonly | -LO
+
+Do no escaping or marking up at all, except for processing the links
+dictionary file and applying it.  This is useful if you want to use
+the linking feature on an HTML document.  If the HTML is a
+complete document (includes HTML,HEAD,BODY tags, etc) then you'll
+probably want to use the --extract option also.
+(default: false)
+
+=item --mailmode | -m
+
+Deal with mail headers & quoted text
+(default: false)
+
+=item --make_anchors | --anchors
+
+Should we try to make anchors in headings?
+(default: true)
+
+=item --make_links
+
+Should we try to build links?  If this is false, then the links
+dictionaries are not consulted and only structural text-to-HTML
+conversion is done.
+(default: true)
+
+=item --make_tables | --tables
+
+Should we try to build tables?  If true, spots tables and marks them up
+appropriately.  See L<Input File Format> for information on how tables
+should be formatted.
+
+This overrides the detection of lists; if something looks like a table,
+it is taken as a table, and list-checking is not done for that
+paragraph.
+
+(default: false)
+
+=item --min_caps_length I<n> | --caps I<n> | -c I<n>
+
+min sequential CAPS for an all-caps line
+(default: 3)
+
+=item --outfile I<filename>
+
+The name of the output file.  If it is "-" then the output goes
+to Standard Output.
+(default: - )
+
+=item --par_indent I<n>
+
+Minumum number of spaces indented in first lines of paragraphs.
+  Only used when there's no blank line
+preceding the new paragraph.
+(default: 2)
+
+=item --preformat_trigger_lines I<n> | --prebegin I<n> | -pb I<n>
+
+How many lines of preformatted-looking text are needed to switch to <PRE>
+          <= 0 : Preformat entire document
+             1 : one line triggers
+          >= 2 : two lines trigger
+
+(default: 2)
+
+=item --endpreformat_trigger_lines I<n> | --preend I<n> | -pe I<n>
+
+How many lines of unpreformatted-looking text are needed to switch from <PRE>
+           <= 0 : Never preformat within document
+              1 : one line triggers
+           >= 2 : two lines trigger
+(default: 2)
+
+NOTE for --prebegin and --preend:
+A zero takes precedence.  If one is zero, the other is ignored.
+If both are zero, entire document is preformatted.
+
+=item --preformat_start_marker I<regexp>
+
+What flags the start of a preformatted section if --use_preformat_marker
+is true.
+
+(default: "^(:?(:?&lt;)|<)PRE(:?(:?&gt;)|>)\$")
+
+=item --preformat_end_marker I<regexp>
+
+What flags the end of a preformatted section if --use_preformat_marker
+is true.
+
+(default: "^(:?(:?&lt;)|<)/PRE(:?(:?&gt;)|>)\$")
+
+=item --preformat_whitespace_min I<n> | --prewhite I<n> | -p I<n>
+
+Minimum number of consecutive whitespace characters to trigger
+normal preformatting. 
+NOTE: Tabs are expanded to spaces before this check is made.
+That means if B<tab_width> is 8 and this is 5, then one tab may be
+expanded to 8 spaces, which is enough to trigger preformatting.
+(default: 5)
+
+=item --prepend_file I<filename> | --prepend_body I<filename> | --pp I<filename>
+
+If you want something prepended to the processed body text, put the
+filename here.  The prepended text will not be processed at all, so make
+sure it's plain text or decent HTML.
+
+(default: nothing)
+
+=item --preserve_indent | -pi
+
+Preserve the first-line indentation of paragraphs marked with indents
+by replacing the spaces of the first line with non-breaking spaces.
+(default: false)
+
+=item --short_line_length I<n> | --shortline I<n> | -s I<n>
+
+Lines this short (or shorter) must be intentionally broken and are kept
+that short.
+(default: 40)
+
+=item --system_link_dict I<filename>
+
+The name of the default "system" link dictionary.
+(default: "/usr/share/txt2html/TextToHTML.dict")
+
+=item --tab_width I<n> | --tabwidth I<n> | -tw I<n>
+
+How many spaces equal a tab?
+(default: 8)
+
+=item --title I<title> | -t I<title>
+
+You can specify a title.  Otherwise it will use a blank one.
+(default: nothing)
+
+=item --titlefirst | -tf
+
+Use the first non-blank line as the title.
+
+=item --underline_length_tolerance I<n> | --ulength I<n> | -ul I<n>
+
+How much longer or shorter can underlines be and still be underlines?
+(default: 1)
+
+=item --underline_offset_tolerance I<n> | --uoffset I<n> | -uo I<n>
+
+How far offset can underlines be and still be underlines?
+(default: 1)
+
+=item --unhyphenation | --unhypnenate | -u
+
+Enables unhyphenation of text.
+(default: true)
+
+=item --use_mosaic_header | --mosaic | -mh
+
+Use this option if you want to force the heading styles to match what Mosaic
+outputs.  (Underlined with "***"s is H1,
+with "==="s is H2, with "+++" is H3, with "---" is H4, with "~~~" is H5
+and with "..." is H6)
+This was the behavior of txt2html up to version 1.10.
+(default: false)
+
+=item --use_preformat_marker | --preformat_marker | -pm
+
+Turn on preformatting when encountering
+"<PRE>" on a line by itself, and turn it
+off when there's a line containing only "</PRE>".
+(default: off)
+
+=item --xhtml
+
+Try to make the output conform to the XHTML standard, including
+closing all open tags and marking empty tags correctly.  This
+turns on --lower_case_tags and overrides the --doctype option.
+Note that if you add a header or a footer file, it is up to you
+to make it conform; the header/footer isn't touched by this.
+Likewise, if you make link-dictionary entries that break XHTML,
+then this won't fix them, except to the degree of putting all tags
+into lower-case.
+
+=back 8
+
+=head1 FILE FORMATS
+
+=head2 Options Files
+
+Options can be given in files as well as on the command-line by
+flagging an option file with @I<filename> in the command-line.
+Also, the files ~/.texthyperrc and ./.texthyperrc are checked for options.
+
+The format is as follows:
+Lines starting with # are comments.  Lines enclosed in PoD markers are
+also comments.  Blank lines are ignored.  The options themselves
+should be given the way they would be on the command line, that is,
+the option name (I<including> the --) followed by its value (if any).
+
+For example:
+
+    # set link dictionaries
+    --system_link_dict /etc/TextToHTML.dict
+    --default_link_dict /home/kat/.TextToHTML.dict
+
+    # set options for poetry
+    --titlefirst
+    --short_line_length 60
+
+See L<Getopt::ArgvFile> for more information.
+
+=head2 Link Dictionary
+
+A link dictionary file contains patterns to match, and what to convert
+them to.  It is called a "link" dictionary because it was intended to be
+something which defined what a href link was, but it can be used for
+more than that.  However, if you wish to define your own links, it is
+strongly advised to read up on regular expressions (regexes) because
+this relies heavily on them.
+
+The file consists of comments (which are lines starting with #)
+and blank lines, and link entries.
+Each entry consists of a regular expression, a -> separator (with
+optional flags), and a link "result".
+
+In the simplest case, with no flags, the regular expression
+defines the pattern to look for, and the result says what part
+of the regular expression is the actual link, and the link which
+is generated has the href as the link, and the whole matched pattern
+as the visible part of the link.  The first character of the regular
+expression is taken to be the separator for the regex, so one
+could either use the traditional / separator, or something else
+such as | (which can be helpful with URLs which are full of / characters).
+
+So, for example, an ftp URL might be defined as:
+
+    |ftp:[\w/\.:+\-]+|      -> $&
+
+This takes the whole pattern as the href, and the resultant link
+has the same thing in the href as in the contents of the anchor.
+
+But sometimes the href isn't the whole pattern.
+
+    /&lt;URL:\s*(\S+?)\s*&gt;/ --> $1
+
+With the above regex, a () grouping marks the first subexpression,
+which is represented as $1 (rather than $& the whole expression).
+This entry matches a URL which was marked explicity as a URL
+with the pattern <URL:foo>  (note the &lt; is shown as the
+entity, not the actual character.  This is because by the
+time the links dictionary is checked, all such things have
+already been converted to their HTML entity forms)
+This would give us a link in the form
+<A HREF="foo">&lt;URL:foo&gt;</A>
+
+B<The h flag>
+
+However, if we want more control over the way the link is constructed,
+we can construct it ourself.  If one gives the h flag, then the
+"result" part of the entry is taken not to contain the href part of
+the link, but the whole link.
+
+For example, the entry:
+
+    /&lt;URL:\s*(\S+?)\s*&gt;/ -h-> <A HREF="$1">$1</A>
+
+will take <URL:foo> and give us <A HREF="foo">foo</A>
+
+However, this is a very powerful mechanism, because it
+can be used to construct custom tags which aren't links at all.
+For example, to flag *italicised words* the following
+entry will surround the words with EM tags.
+
+    /\B\*([a-z][a-z -]*[a-z])\*\B/ -hi-> <EM>$1</EM>
+
+B<The i flag>
+
+This turns on ignore case in the pattern matching.
+
+B<The e flag>
+
+This turns on execute in the pattern substitution.  This really
+only makes sense if h is turned on too.  In that case, the "result"
+part of the entry is taken as perl code to be executed, and the
+result of that code is what replaces the pattern.
+
+B<The o flag>
+
+This marks the entry as a once-only link.  This will convert the
+first instance of a matching pattern, and ignore any others
+further on.
+
+For example, the following pattern will take the first mention
+of HTML::TextToHTML and convert it to a link to the module's home page.
+
+    "HTML::TextToHTML"  -io-> http://www.example.com/tools/text_to_html/
+
+=head2 Input File Format
+
+For the most part, this module tries to use intuitive conventions for
+determining the structure of the text input.  Unordered lists are
+marked by bullets; ordered lists are marked by numbers or letters;
+in either case, an increase in indentation marks a sub-list contained
+in the outer list.
+
+Headers (apart from custom headers) are distinguished by "underlines"
+underneath them; headers in all-capitals are distinguished from
+those in mixed case.
+
+Tables require a more rigid convention.  A table must be marked as a
+separate paragraph, that is, it must be surrounded by blank lines.
+Columns must be separated by two or more spaces (this prevents
+accidental incorrect recognition of a paragraph where interword spaces
+happen to line up).  If there are two or more rows in a paragraph and
+all rows share the same set of (two or more) columns, the paragraph is
+assumed to be a table.  For example
+
+    -e  File exists.
+    -z  File has zero size.
+    -s  File has nonzero size (returns size).
+
+becomes
+
+    <TABLE>
+    <TR><TD>-e</TD><TD>File exists.</TD></TR>
+    <TR><TD>-z</TD><TD>File has zero size.</TD></TR>
+    <TR><TD>-s</TD><TD>File has nonzero size (returns size).</TD></TR>
+    </TABLE>
+
+This guesses for each column whether it is intended to be left,
+centre or right aligned.
+
+
+=head1 EXAMPLES
+
+B<Convert one file to HTML>
+
+    texthyper --infile thing.txt --outfile thing.html
+
+This will create a HTML file called C<thing.html> from the plain
+text file C<thing.txt>.
+
+=head1 NOTES
+
+=over 4
+
+=item *
+
+One cannot use "CLEAR" as a value for the cumulative options.
+
+=back 4
+
+=head1 BUGS
+
+Tell me about them.
+
+=head1 PREREQUISITES
+
+    Pod::Usage
+    HTML::TextToHTML
+    Getopt::Long
+    Getopt::ArgvFile
+    File::Basename
+    perldoc
+
+=head1 SCRIPT CATEGORIES
+
+Web
+
+=head1 ENVIRONMENT
+
+=over 4
+
+=item HOME
+
+texthyper looks in the HOME directory for config files.
+
+=back 4
+
+=head1 FILES
+
+These files are only read if the Getopt::ArgvFile module is
+available on the system.
+
+=over 4
+
+=item C<~/.texthyperrc>
+
+User configuration file.
+
+=item C<.texthyperrc>
+
+Configuration file in the current working directory; overrides
+options in C<~/.texthyperrc> and is overridden by command-line options.
+
+=back 4
+
+=head1 SEE ALSO
+
+perl(1)
+htmltoc(1)
+HTML::TextToHTML
+Getopt::Long
+Getopt::ArgvFile
+
+=head1 AUTHOR
+
+Kathryn Andersen      rubykat@katspace.com    http://www.katspace.com
+based on txt2html by Seth Golub
+
+
+=head1 COPYRIGHT
+
+Original txt2html script copyright (C) 1994-2000 Seth Golub seth@aigeek.com
+Copyright (C) 2002 Kathryn Andersen rubykat@katspace.com  All rights
+reserved.  This program is free software; you can redistribute it and/or
+modify it under the same terms as Perl itself.
+
+=head1 HISTORY
+
+=over 4
+
+=item Version 1.0
+
+initial version
+
+=item Version 1.10
+
+Merged script into HTML::TextToHTML distribution.  Removed AppConfig
+and use Getopt::Long and Getopt::ArgvFile instead.  Put all documentation
+for this script in the script file, even if it means duplication of the
+documentation of HTML::TextToHTML.
+
+=back 4
+
+=cut
+
+#################################################################
+# Globals
+#
+use vars qw($VERSION);
+$VERSION = '1.10';
+
+#################################################################
+# Includes
+require 5.005_03;
+use Pod::Usage;
+use Getopt::Long;
+use File::Basename;
+use HTML::TextToHTML;
+
+#################################################################
+# Subroutines
+
+sub init_data ($) {
+    my $data_ref = shift;
+
+    my %args = ();
+    $args{manpage} = 0;
+    $args{debug} = 0;
+    $args{version} = 0;
+    $args{quiet} = 0;
+    $args{help} = 0;
+    $args{infile} = [];
+
+    $data_ref->{args} = \%args;
+}
+
+sub process_args ($) {
+    my $data_ref = shift;
+    my $args_ref = $data_ref->{args};
+
+    my $ok = 1;
+
+    # check the rc file if we can
+    if (eval("require Getopt::ArgvFile")) {
+	my $nameBuilder=sub { my $bn = basename($0, ''); return ".${bn}rc";};
+	Getopt::ArgvFile::argvFile(
+	    startupFilename=>$nameBulder,
+	    startupFilename=>$nameBulder,
+	    home=>1,
+	    current=>1);
+    }
+    $ok = GetOptions($args_ref,
+	'help',
+	'manpage|man_help',
+	'debug',
+	'version',
+	'verbose!',
+	'append_file|append_body|ab=s',
+	'append_head|ah=s',
+	'caps_tag|capstag|ct=s',
+	'custom_heading_regexp|heading|H=s@',
+	'default_link_dict|dict=s',
+	'dict_debug|db=n',
+	'doctype|dt=s',
+	'eight_bit_clean|8!',
+	'escape_HTML_chars|escapechars|ec!',
+	'explicit_headings|EH!',
+	'extract!',
+	'hrule_min|r=n',
+	'indent_width|iw=n',
+	'indent_par_break|ipb!',
+	'infile=s@',
+	'links_dictionaries|link|l=s@',
+	'link_only|linkonly|LO!',
+	'lower_case_tags|lc_tags|LC!',
+	'mailmode|m!',
+	'make_anchors|anchors!',
+	'make_links!',
+	'make_tables|tables!',
+	'min_caps_length|caps|c=n',
+	'outfile|out|o=s',
+	'par_indent=n',
+	'preformat_trigger_lines|prebegin|pb=n',
+	'endpreformat_trigger_lines|preend|pe=n',
+	'preformat_start_marker=s',
+	'preformat_end_marker=s',
+	'preformat_whitespace_min|prewhite|p=n',
+	'prepend_file|prepend_body|pp=s',
+	'preserve_indent|pi!',
+	'short_line_length|shortline|s=n',
+	'system_link_dict|sysdict=s',
+	'tab_width|tabwidth|tw=n',
+	'title|t=s',
+	'titlefirst|tf!',
+	'underline_length_tolerance|ulength|ul=n',
+	'underline_offset_tolerance|uoffset|uo=n',
+	'unhyphenation|unhyphenate!',
+	'use_mosaic_header|mosaic|mh!',
+	'use_preformat_marker|preformat_marker|pm!',
+	'xhtml!',
+    );
+    if (!$ok)
+    {
+	pod2usage({ -message => "$0",
+		    -exitval => 1,
+		    -verbose => 0,
+	    });
+    }
+
+    if ($args_ref->{'version'})
+    {
+	print STDERR "$0 version: $VERSION\n";
+	exit 0;
+    }
+    if ($args_ref->{'manpage'})
+    {
+	pod2usage({ -message => "$0 version $VERSION",
+		    -exitval => 0,
+		    -verbose => 2,
+	    });
+    }
+    if ($args_ref->{'help'})
+    {
+	pod2usage({ -message => "$0 version $VERSION",
+		    -exitval => 0,
+		    -verbose => 1,
+	    });
+    }
+    # transfer script-only things to the data-ref
+    undef $args_ref->{help};
+    undef $args_ref->{manpage};
+    undef $args_ref->{version};
+    # make the object
+    my $doc = HTML::TextToHTML->new(%{$args_ref});
+    $data_ref->{doc} = $doc;
+}
+
+#################################################################
+# Main
+
+MAIN: {
+    my %data = ();
+    my $result = 0;
+    init_data(\%data);
+    process_args(\%data);
+
+    # now the remainder must be input-files
+    # Push the infiles onto the infile array,
+    # because there might already have been infiles added with --infile.
+    foreach my $df (@ARGV)
+    {
+	if ($data{doc}->{debug}) {
+	    print STDERR "--infile $df\n";
+	}
+	push @{$data{doc}->{infile}}, $df;
+    }
+
+    $data{doc}->txt2html();
+}
+
+# vim: sw=4 sts=4 ai
